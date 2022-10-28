@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <script data-require="d3@3.4.6" data-semver="3.4.6" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
+    <title>RU-NETWORK</title>
+    <script data-require="d3@3.4.6" data-semver="3.4.6" src="lib/d3.v3.min.js"></script>
     <script src="lib/underscore.js"></script>
-    <script src="d3_grid.js"></script>
+    <script src="lib/d3_grid.js"></script>
 
 </head>
 <style>
@@ -26,7 +26,7 @@
   }
 </style>
 <body>
-  <script src='figures.js'></script>  
+  <script src='js/figures.js'></script>  
     <script>
 
 var colorSheme = ["red", "green", "blue", "orange", "purple", "yellow"];
@@ -51,7 +51,7 @@ var margin = {top: 100, left: 100, right: 50, bottom: 0 };
 
 var nodeSize = 300;
 
-d3.csv("real_data.csv", function(data){
+d3.csv("data/belgium.csv", function(data){
 
   data.forEach(function(d){
     d.size = 25;
