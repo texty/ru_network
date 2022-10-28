@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script data-require="d3@3.4.6" data-semver="3.4.6" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
+    <script src="lib/underscore.js"></script>
+    <script src="d3_grid.js"></script>
+
+</head>
+<style>
+  body {
+    margin: 0;
+    background-color: black;
+  }
+
+  path.domain {
+    display: none;
+  }
+
+  circle {
+    fill: grey;
+    fill-opacity: .25;
+  }
+</style>
+<body>
+  <script src='figures.js'></script>  
+    <script>
+
+var colorSheme = ["red", "green", "blue", "orange", "purple", "yellow"];
+var shapes = [bacilus, bacillus2];
+
+var MARGINS = {
+      top: 20,
+      right: 100,
+      bottom: 20,
+      left: 100
+    };
+
+var WIDTH = window.innerWidth * 0.95,
+    innerWIDTH = WIDTH - MARGINS.left - MARGINS.right,
+    HEIGHT = 1000,
+    DIAMETER = 600;
+
+
+
+var categories = "abc".split("");
+var margin = {top: 100, left: 100, right: 50, bottom: 0 };
+
+var nodeSize = 300;
+
+d3.csv("real_data.csv", function(data){
+
+  data.forEach(function(d){
+    d.size = 25;
+  })
+
+    var nest = d3.nest()
+        .key(function(d){ return d.domain})       
+        .entries(data);
+
+    nest.forEach(function(d){
+        d.r = d.values.length*2
+    })
+
+    var grid = d3.layout.grid()
+        .cols(Math.floor(innerWIDTH/nodeSize))
+        .nodeSize([nodeSize, nodeSize])
+        .padding([10, 10]); 
+
+    //var df = makeData();    
+   
+    var Test = grid(nest)
+    .map(function(group) {
+          return {
+            name: group.key,
+            children: group.values,
+            scatX: group.x,
+            scatY: group.y,
+            r: 150,
+            size: group.values.length
+          }
+        });
+
+
+    var df  = {
+      "name": "root",
+      "children": Test
+    }
+    
+    console.log(df)
+    //var Test = getCenters("domain", [width, height], data);
+
+  /*   var biggest = d3.max(Test, function(d){ 
+        console.log(d)
+        return 150//d.r //d.amount
+    }); */
+    var paddingVal = nodeSize/2;
+
+    xRange = d3.scale
+        .linear()
+        .range([MARGINS.left, WIDTH - MARGINS.right])
+        .domain([0,innerWIDTH]),
+      yRange = d3.scale
+        .linear()
+        .range([HEIGHT - MARGINS.top, MARGINS.bottom])
+        .domain([1000, 0]),
+
+      xAxis = d3.svg.axis()
+        .scale(xRange)
+        .tickSize(5)
+        .tickSubdivide(true),
+      yAxis = d3.svg.axis()
+        .scale(yRange)
+        .tickSize(5)
+        .orient('left')
+        .tickSubdivide(true);
+
+    /* додати крежчки гріду */
+   /*  var viz = d3.select("body").append("svg")
+    .attr("width", width )
+    .attr("height", height )
+    .append("g")
+     .attr("transform", `translate(${paddingVal}, ${paddingVal})`); 
+
+    viz.selectAll("circle")
+    .data(Test)
+    .enter()
+    .append("circle")
+    .attr("cx", function(d){ return d.x   })
+    .attr("cy", function(d){ return d.y })
+    .attr("r",  function(d){ return 125 })
+    .attr('fill', 'grey'); */
+
+    var vis = d3.select('body')
+      .append('svg')
+      .attr('width', WIDTH)
+      .attr('height', HEIGHT)
+      .append("g")
+      .attr("transform", `translate(${MARGINS.left}, ${paddingVal})`);
+    
+
+    vis.append('svg:g')
+      .attr('class', 'x axis')
+      .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
+      .call(xAxis);
+
+    vis.append('svg:g')
+      .attr('class', 'y axis')
+      .attr('transform', 'translate(' + (MARGINS.left) + ',0)')
+      .call(yAxis);
+
+    // normal packed layout
+    var pack = d3.layout.pack()
+      .size([DIAMETER - 4, DIAMETER - 4])
+      .value(function(d) {
+        return d.size;
+      });
+
+    
+
+     // classify each level
+    // classify each level
+    var node = vis.datum(df)
+      .selectAll(".node")
+      .data(pack.nodes)
+      .enter().append("g")
+      .attr("class", function(d) {
+        // root level
+        if (!d.parent) {
+          return "node rootNode";
+          // first level children, these are our scatter points
+        } else if (d.children && !d.parent.parent) {
+          return "node pointNode";
+          // an intermediate circle
+        } else if (d.children) {
+          return "node innerNode";
+          // last level packing
+        } else {
+          return "node innerNode packedNode";
+        }
+      });
+
+     // use calculated radius
+     node.filter(".pointNode")
+      .append("circle")
+      .attr("r", function(d) { return 125 }); 
+
+      node.filter(".innerNode")
+        .append("path")
+        .attr("d", function() { return shapes[randBetween(0, 1)]})
+        .style("stroke", "transparent")
+        .style("fill", function(){
+            return colorSheme[randBetween(0, 5)] });
+
+     // we don't care about root circle, move off page
+    node.filter(".rootNode")
+      .attr("transform", "translate(" + -100 + "," + -100 + ")");
+
+     // this is our scatter point
+    node.filter(".pointNode")
+      .attr("transform", function(d) {       
+        return "translate(" + xRange(d.scatX) + "," + yRange(d.scatY) + ")";
+      });
+
+     // any circle in a scatter point
+    node.filter(".innerNode")
+      .attr("transform", function(d) {
+        console.log(d);
+        var iter = d;
+        if (!iter.scatX) {
+          iter = iter.parent;
+        }
+        // diff from scatter point...
+        var difX = iter.x - d.x,
+          difY = iter.y - d.y;
+        return "translate(" + (xRange(iter.scatX) + difX -  (d.r)) + "," + (yRange(iter.scatY) + difY -  (d.r)) + ") scale(0.4)";
+      })
+
+
+      function updateVis(data){
+              
+        var N = vis.selectAll(".node")
+          .data(pack.nodes(data), function(d){ return d.name });
+
+        
+        
+        var enterNodes = N
+      	.attr("class", function(d) {
+        if (!d.parent) {
+          return "node rootNode";
+        } else if (d.children && !d.parent.parent) {
+          return "node pointNode";
+        } else if (d.children) {
+          return "node innerNode";
+        } else {
+          return "node innerNode packedNode";
+        }
+      });
+
+      node.filter(".pointNode")
+        .select("circle")
+        .transition()
+        .duration(500)
+        .attr("r", function(d) { return d.r * 1.2 }); 
+
+      node.filter(".pointNode")
+        .transition()
+        .duration(500)
+        .attr("transform", function(d) {
+          return "translate(" + xRange(d.scatX) + "," + yRange(d.scatY) + ")";
+        });
+        
+      N.filter(".innerNode")
+        .transition()
+        .duration(500)
+        .attr("transform", function(d) {
+          var iter = d;
+          while (!iter.scatX) {
+            iter = iter.parent;
+          }
+          // diff from scatter point...
+          var difX = iter.x - d.x,
+            difY = iter.y - d.y;
+          return "translate(" + (xRange(iter.scatX) + difX -  (d.r)) + "," + (yRange(iter.scatY) + difY -  (d.r)) + ") scale(0.4)";
+        })
+      }
+
+
+
+
+
+})
+
+// Generate random hierarchical data
+function makeData(){
+        return {
+          name: "root",
+          children: categories.map((name,i) => {
+              console.log(i)
+             
+            return {
+              "name": name,
+              "scatX": 100,               
+              "scatY": 100,
+              "r": 150,
+              children: d3.range(randBetween(199, 200)).map((d, i) => {
+                return {
+                 name: `${name}${i}`,
+                  size: randBetween(20, 30)
+                }
+              })
+            }
+          })
+        };
+      }
+
+      function randBetween(min, max){
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+    </script>
+    
+</body>
+</html>
