@@ -1,0 +1,149 @@
+<html>
+
+<head>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="lib/d3_v4_grid.js"></script>
+</head>
+
+<style>
+    body {
+    margin: 0;
+    background-color: black;
+  }
+
+  path.domain {
+    display: none;
+  }
+
+  circle {
+    stroke: grey;
+    stroke-width: 6px;
+    fill-opacity: .25;
+    stroke-opacity: 0.5;
+  }
+</style>
+
+  
+<body>  
+
+<svg id="scatterplot"></svg>
+
+<script src='js/figures.js'></script>  
+<script>
+
+var MARGINS = { top: 180, right: 90,  bottom: 20, left: 70  };
+var colorSheme = ["#7C84A9", "#E17C8E", "#AAA63A", "#2A987F", "#7B2C3F", "#E2D582"];
+var shapes = [bacilus, bacillus2, bacillus3];
+
+var WIDTH = window.innerWidth * 0.95,
+    innerWIDTH = WIDTH - MARGINS.left - MARGINS.right,
+    HEIGHT = 1800,
+    DIAMETER = 1200;
+
+
+
+
+var toShow = 'domain'
+
+
+
+d3.csv("data/test_full_data.csv").then(function(df){    
+
+    var nest = d3.nest()
+        .key(function(d){ return d[toShow]})       
+        .entries(df)
+        .sort(function(a,b){ return b.values.length - a.values.length});
+
+    //var radius = d3.max(nest, function(d){ return d.values.length/2.5});
+    var radius = 165;
+    var innerRadius = radius - 20;
+    var nodeSize = radius * 2;
+    var cols_default = Math.round(innerWIDTH/nodeSize)
+    var cols_amount = cols_default > 1 ? cols_default : 1;
+
+    var grid = d3.grid()
+        .cols(cols_amount)
+        .nodeSize([nodeSize, nodeSize])
+        .padding([10, 70]); 
+
+    let skip1 = {key: 'empty'}
+    let skip2 = {key: 'empty'}
+    nest.unshift(skip1);
+    nest.unshift(skip2); 
+
+    var svg = d3.select("#scatterplot")
+        .attr("width", WIDTH)
+        .attr("height", HEIGHT)
+        .append("g")
+        .attr("transform", `translate(${radius + 10}, ${radius + 20})`)
+       
+    var Test = grid(nest).filter(function(d){ return d.key != 'empty'});
+
+   
+    var countries_cx = {};
+    var countries_cy = {};
+    for(var i=0; i < Test.length; i++){   
+        countries_cx[Test[i].key] = Test[i].x
+        countries_cy[Test[i].key] = Test[i].y
+    } 
+
+    df.forEach(function(d){
+        var randAngle = Math.random() * Math.PI * 2;
+        var randRadius = Math.sqrt( ~~(Math.random()* innerRadius * innerRadius));; 
+        var randX = countries_cx[d[toShow]] + randRadius * Math.cos(randAngle);
+        var randY = countries_cy[d[toShow]] + randRadius * Math.sin(randAngle);
+
+        d.x = randX;
+        d.y = randY;        
+        d.r = 5
+    }); 
+
+    let circles = svg.selectAll("circle").data(Test);
+    let labels = svg.selectAll("text").data(Test);
+
+    circles.enter()
+        .append('circle')
+        .attr("cx", function(d){ return d.x + 10})
+        .attr("cy", function(d){ return d.y + 7})
+        .attr("r", radius);
+
+    labels.enter()
+        .append('text')
+        .attr("x", function(d){ return d.x + 10})
+        .attr("y", function(d){ return d.y - radius })
+        .text(function(d) { return d.key  })
+        .attr("fill", 'silver')
+        .style("text-anchor", "middle"); 
+
+    
+    
+    let sim = d3.forceSimulation(df);
+        sim.force("collision", d3.forceCollide(d => d.r));        
+        sim.on('tick', drawPlot);    
+    
+    drawPlot(); 
+
+
+    function drawPlot(){        
+        let points = d3.select("#scatterplot g").selectAll("path").data(df);
+
+       points.enter()
+            .append("path")
+            .attr("d", function() { return shapes[randBetween(0, 2)]})     
+            .attr("transform", function(d){ return `translate(${d.x}, ${d.y})`}) 
+            .attr("r", function(d){ return d.r })
+            .style("fill", function(){ return colorSheme[randBetween(0, 5)] });        
+
+        points   
+            .attr("transform", function(d){ return `translate(${d.x}, ${d.y}) scale(0.4)`})   
+    }
+});
+
+function randBetween(min, max){
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+</script>
+
+</body>
+</html>
