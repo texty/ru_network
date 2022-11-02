@@ -1,149 +1,447 @@
 <html>
 
 <head>
-<script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="lib/d3_v4_grid.js"></script>
+    <script src="lib/d3v5.min.js"></script>
+    <!-- скрипт з грідом трохи поправила відповідно до того, який був на версії 3. Він краще працює, враховує розмір одиниці і кількість колонок -->
+    <script src="lib/d3_v4_grid.js"></script>
 </head>
 
 <style>
     body {
-    margin: 0;
-    background-color: black;
-  }
+        margin: 0;
+        background-color: black;
+    }
 
-  path.domain {
-    display: none;
-  }
+    path.domain {
+        display: none;
+    }
 
-  circle {
-    stroke: grey;
-    stroke-width: 6px;
-    fill-opacity: .25;
-    stroke-opacity: 0.5;
-  }
+    circle {
+        stroke: grey;
+        stroke-width: 6px;
+        fill-opacity: .25;
+        stroke-opacity: 0.5;
+    }
+
+    .switch {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .switch button {
+        margin-right: 10px;
+    }
 </style>
 
-  
-<body>  
 
-<svg id="scatterplot"></svg>
+<body>
+    <div class='switch'>
+        <button id='change_by_country'>by_country</button>
+        <button id='change_by_sphere_grid'>by_sphere_grid</button>
+        <button id='change_by_sphere'>by_sphere</button>
+    </div>
 
-<script src='js/figures.js'></script>  
-<script>
+    <svg id="scatterplot"></svg>
 
-var MARGINS = { top: 180, right: 90,  bottom: 20, left: 70  };
-var colorSheme = ["#7C84A9", "#E17C8E", "#AAA63A", "#2A987F", "#7B2C3F", "#E2D582"];
-var shapes = [bacilus, bacillus2, bacillus3];
+    <script src='js/figures.js'></script>
+    <script>
 
-var WIDTH = window.innerWidth * 0.95,
-    innerWIDTH = WIDTH - MARGINS.left - MARGINS.right,
-    HEIGHT = 1800,
-    DIAMETER = 1200;
+        var MARGINS = { top: 180, right: 90, bottom: 20, left: 70 };
 
+        var colorSheme = d3.scaleOrdinal()
+            .domain(['політика', "громадська", "медіа", "експерт", "культура", 'бізнес', "освіта"])
+            .range(["#9E5C39", "#7B2C3F", "#AAA63A", "#7C84A9", "#896179", "#E17C8E", "#2A987F"]);
 
+        var shapes = [bacilus, bacillus2, bacillus3];
 
+        var WIDTH = window.innerWidth * 0.95,
+            innerWIDTH = WIDTH - MARGINS.left - MARGINS.right,
+            HEIGHT = 800,
+            DIAMETER = 1200;
 
-var toShow = 'domain'
+        var toShow = 'country';
 
+        var packLayout = d3.pack()
+            .size([WIDTH, HEIGHT])
+            .padding(function (d) {
+            return d.height > 1 ? 20 / 0.35 : 3
+            });
 
+        d3.csv("data/test_full_data.csv").then(function (df) {
 
-d3.csv("data/test_full_data.csv").then(function(df){    
+            var svg = d3.select("#scatterplot")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT);
 
-    var nest = d3.nest()
-        .key(function(d){ return d[toShow]})       
-        .entries(df)
-        .sort(function(a,b){ return b.values.length - a.values.length});
-
-    //var radius = d3.max(nest, function(d){ return d.values.length/2.5});
-    var radius = 165;
-    var innerRadius = radius - 20;
-    var nodeSize = radius * 2;
-    var cols_default = Math.round(innerWIDTH/nodeSize)
-    var cols_amount = cols_default > 1 ? cols_default : 1;
-
-    var grid = d3.grid()
-        .cols(cols_amount)
-        .nodeSize([nodeSize, nodeSize])
-        .padding([10, 70]); 
-
-    let skip1 = {key: 'empty'}
-    let skip2 = {key: 'empty'}
-    nest.unshift(skip1);
-    nest.unshift(skip2); 
-
-    var svg = d3.select("#scatterplot")
-        .attr("width", WIDTH)
-        .attr("height", HEIGHT)
-        .append("g")
-        .attr("transform", `translate(${radius + 10}, ${radius + 20})`)
-       
-    var Test = grid(nest).filter(function(d){ return d.key != 'empty'});
-
-   
-    var countries_cx = {};
-    var countries_cy = {};
-    for(var i=0; i < Test.length; i++){   
-        countries_cx[Test[i].key] = Test[i].x
-        countries_cy[Test[i].key] = Test[i].y
-    } 
-
-    df.forEach(function(d){
-        var randAngle = Math.random() * Math.PI * 2;
-        var randRadius = Math.sqrt( ~~(Math.random()* innerRadius * innerRadius));; 
-        var randX = countries_cx[d[toShow]] + randRadius * Math.cos(randAngle);
-        var randY = countries_cy[d[toShow]] + randRadius * Math.sin(randAngle);
-
-        d.x = randX;
-        d.y = randY;        
-        d.r = 5
-    }); 
-
-    let circles = svg.selectAll("circle").data(Test);
-    let labels = svg.selectAll("text").data(Test);
-
-    circles.enter()
-        .append('circle')
-        .attr("cx", function(d){ return d.x + 10})
-        .attr("cy", function(d){ return d.y + 7})
-        .attr("r", radius);
-
-    labels.enter()
-        .append('text')
-        .attr("x", function(d){ return d.x + 10})
-        .attr("y", function(d){ return d.y - radius })
-        .text(function(d) { return d.key  })
-        .attr("fill", 'silver')
-        .style("text-anchor", "middle"); 
-
-    
-    
-    let sim = d3.forceSimulation(df);
-        sim.force("collision", d3.forceCollide(d => d.r));        
-        sim.on('tick', drawPlot);    
-    
-    drawPlot(); 
+            //circles part (we also have bar-chart part)    
+            var c_group = svg
+                .append("g")
+                .attr("id", "main-vis")
+                .attr("transform", `translate(160, 0)`)
 
 
-    function drawPlot(){        
-        let points = d3.select("#scatterplot g").selectAll("path").data(df);
+            prepareData_1("country", 115);
 
-       points.enter()
-            .append("path")
-            .attr("d", function() { return shapes[randBetween(0, 2)]})     
-            .attr("transform", function(d){ return `translate(${d.x}, ${d.y})`}) 
-            .attr("r", function(d){ return d.r })
-            .style("fill", function(){ return colorSheme[randBetween(0, 5)] });        
+            d3.select('#change_by_country').on("click", function () {
+                prepareData_1("country", 115);
+            });
 
-        points   
-            .attr("transform", function(d){ return `translate(${d.x}, ${d.y}) scale(0.4)`})   
-    }
-});
+            d3.select('#change_by_sphere_grid').on("click", function () {
+                prepareData_1("domain", 165);
+            });
 
-function randBetween(min, max){
-        return Math.floor(Math.random() * (max - min + 1) + min);
-    }
+            
 
-</script>
+            d3.select('#change_by_sphere').on("click", function () {
+                prepareData_2();
+            })
+
+
+            
+
+            function prepareData_1(group_var, setR) {
+
+                var nest = d3.nest()
+                    .key(function (d) { return d[group_var] })
+                    .entries(df)
+                    .sort(function (a, b) { return b.values.length - a.values.length });  
+
+                var radius = setR;
+                var innerRadius = radius - 18;
+                var nodeSize = radius * 2;
+
+                //к-ть колонок для гріда
+                var cols_default = Math.round(innerWIDTH / nodeSize)
+                var cols_amount = cols_default > 1 ? cols_default : 1;
+
+                var grid = d3.grid()
+                    .cols(cols_amount)
+                    .nodeSize([nodeSize, nodeSize])
+                    .padding([10, 70]);
+
+                //додаємо пусті обʼєкти в грід на початоку, щоб потім їх прибрати і зсунути грід на 2 обʼєкти
+                let skip1 = { key: 'empty' }
+                let skip2 = { key: 'empty' }
+                nest.unshift(skip1);
+                nest.unshift(skip2);
+
+
+                //визначаємо позиція великих кілець
+                var data_for_grid = grid(nest)
+                    .filter(function (d) { return d.key != 'empty' });
+
+                    data_for_grid.forEach(function (d) {
+                    d.r = radius
+                })
+
+                //рахуємо висоту svg
+                var rows_amount = Math.ceil((data_for_grid.length + 2) / cols_amount);
+                var calculated_height = (rows_amount * nodeSize) + (rows_amount * 70 + 100)
+
+
+                svg.attr("height", calculated_height)
+
+                //робимо набір з x та y координатами для кожного елементу гріда
+                var countries_cx = {};
+                var countries_cy = {};
+                for (var i = 0; i < data_for_grid.length; i++) {
+                    countries_cx[data_for_grid[i].key] = data_for_grid[i].x
+                    countries_cy[data_for_grid[i].key] = data_for_grid[i].y + 180
+                }
+
+                //розраховуємо x та y координату кожної бактерії в межах коло відповідно до гріду.
+                df.forEach(function (d) {
+                    //формула рендомна точка на диску
+                    var randAngle = Math.random() * Math.PI * 2;
+                    var randRadius = Math.sqrt(~~(Math.random() * innerRadius * innerRadius));;
+                    var randX = countries_cx[d[group_var]] + randRadius * Math.cos(randAngle);
+                    var randY = countries_cy[d[group_var]] + randRadius * Math.sin(randAngle);
+
+                    d.x = randX;
+                    d.y = randY;
+                    d.r = 5
+                });                
+
+
+                //force collide, щоб прибрати overlapping з точок після грубого розрахунку місця на диску
+                let sim = d3.forceSimulation(df);
+                sim.force("collision", d3.forceCollide(d => d.r));
+                sim.on('tick', drawPlot);
+
+
+                function drawPlot() {
+
+                    //додаємо кола гріда
+                    let circles = c_group.selectAll("circle")
+                        .data(data_for_grid);
+
+                    let labels = c_group.selectAll("text")
+                        .data(data_for_grid);
+
+                    circles.exit().remove()
+
+                    circles
+                        .enter()
+                        .append('circle')
+                        .attr("cx", function (d) { return d.x + 10 })
+                        .attr("cy", function (d) { return d.y + 187 })
+                        .attr("r", function (d) { return d.r });
+
+                    circles
+                        .transition()
+                        .duration(200)
+                        .attr("cx", function (d) { return d.x + 10 })
+                        .attr("cy", function (d) { return d.y + 187 })
+                        .attr("r", function (d) { return d.r });
+
+
+                    // підписи до гріда    
+                    labels.exit().remove()
+
+                    labels.enter()
+                        .append('text')
+                        .attr("x", function (d) { return d.x + 10 })
+                        .attr("y", function (d) { return d.y + 180- radius })
+                        .text(function (d) { return d.key })
+                        .attr("fill", 'silver')
+                        .style("text-anchor", "middle");
+
+                    labels
+                        .transition()
+                        .duration(200)
+                        .attr("x", function (d) { return d.x + 10 })
+                        .attr("y", function (d) { return d.y + 180 - radius })
+                        .text(function (d) { return d.key })
+                        .attr("fill", 'silver')
+                        .style("text-anchor", "middle");
+
+
+                    //відмальовка точок-бактерій
+                    let points = d3.select("#scatterplot g#main-vis").selectAll("path").data(df);
+
+                    points.enter()
+                        .append("path")
+                        .attr("d", function () { return shapes[randBetween(0, 2)] })
+                        .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.4)` })
+                        .attr("r", function (d) { return d.r })
+                        .style("fill", function (d) { return colorSheme(d.domain) });
+
+
+                    //rotate(${Math.random() * Math.PI * 2 })
+                    points
+                        .transition()
+                        .duration(200)
+                        .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.4)` })
+                    }
+            }
+
+
+            function prepareData_2() {
+
+                df.forEach(function (d) {
+                    d.size = 1;
+                })
+            
+                var nest = d3.nest()
+                    .key(function (d) { return d.domain })
+                    .entries(df)
+                    .sort(function (a, b) { return b.values.length - a.values.length })
+                    .map(function (group) {
+                    return {
+                        name: group.key,
+                        children: group.values,            
+                        size: group.values.length
+                    }
+                    });  
+
+                var data_2 = {
+                    "name": "root",
+                    "children": nest
+                }
+
+                var rootNode = d3.hierarchy(data_2);
+                rootNode.sum(function (d) { return d.size; });
+                packLayout(rootNode);
+
+                var data_for_grid = rootNode.descendants()
+                    .filter(function (d) { return d.depth === 1 });
+                
+                var domain_cx = {};
+                var domain_cy = {};
+                var domain_r = {};
+
+                for (var i = 0; i < data_for_grid.length; i++) {
+                    domain_cx[data_for_grid[i].data.name] = data_for_grid[i].x
+                    domain_cy[data_for_grid[i].data.name] = data_for_grid[i].y
+                    domain_r[data_for_grid[i].data.name] = data_for_grid[i].r
+                }
+
+                df.forEach(function (d) {
+                    let innerRadius = domain_r[d.domain] - 20
+                    //формула рендомна точка на диску
+                    var randAngle = Math.random() * Math.PI * 2;
+                    var randRadius = Math.sqrt(~~(Math.random() * innerRadius * innerRadius));;
+                    var randX = domain_cx[d.domain] + randRadius * Math.cos(randAngle);
+                    var randY = domain_cy[d.domain] + randRadius * Math.sin(randAngle);
+                    d.x = randX;
+                    d.y = randY;
+                    d.r = 2
+                    });      
+
+                let sim = d3.forceSimulation(df);
+                sim.force("collision", d3.forceCollide(d => d.r));
+                sim.on('tick', drawPlot);
+
+                //відмальовка точок-бактерій
+                function drawPlot() {
+
+                    //грід 
+                    let circles = c_group.selectAll("circle").data(data_for_grid);
+                    let labels = c_group.selectAll("text").data(data_for_grid);
+
+                    circles.exit().remove()
+
+                    circles
+                    .enter()
+                    .append('circle')
+                    .attr("cx", function (d) { return d.x + 10 })
+                    .attr("cy", function (d) { return d.y + 7 })
+                    .attr("r", function (d) { return d.r });
+
+                    circles
+                    .transition()
+                    .duration(200)
+                    .attr("cx", function (d) { return d.x + 10 })
+                    .attr("cy", function (d) { return d.y + 7 })
+                    .attr("r", function (d) { return d.r });
+
+                    // підписи до гріда    
+                    labels.exit().remove()
+
+                    labels.enter()
+                    .append('text')
+                    .attr("x", function (d) { return d.x + 10 })
+                    .attr("y", function (d) { return d.y - d.r })
+                    .text(function (d) { return d.data.name })
+                    .style("fill", function (d) { return colorSheme(d.data.name) })
+                    .style("text-anchor", "middle");
+
+                    labels
+                    .transition()
+                    .duration(200)
+                    .attr("x", function (d) { return d.x + 10 })
+                    .attr("y", function (d) { return d.y - d.r })
+                    .text(function (d) { return d.data.name })
+                    .style("fill", function (d) { return colorSheme(d.data.name) })
+                    .style("text-anchor", "middle");
+
+
+                    //точки    
+                    let points = c_group.selectAll("path").data(df);
+
+                    points.enter()
+                    .append("path")
+                    .attr("d", function () { return shapes[randBetween(0, 2)] })
+                    .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.4)` })
+                    .attr("r", function (d) { return d.r })
+                    .style("fill", function (d) { return colorSheme(d.domain) });
+
+
+                    //rotate(${Math.random() * Math.PI * 2 })
+                    points
+                    .transition()
+                    .duration(200)
+                    .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.4)` })
+
+                }
+                }
+
+
+
+            
+
+            /* Барт-чарт */    
+            var barchart_data = [
+                { "cat": "громадська", "val1": 90, "val2": 100 },
+                { "cat": "політика", "val1": 130, "val2": 88 },
+                { "cat": "медіа", "val1": 70, "val2": 14 },
+                { "cat": "експерт", "val1": 20, "val2": 100 },
+                { "cat": "освіта", "val1": 40, "val2": 90 },
+                { "cat": "церкви", "val1": 14, "val2": 60 },
+                { "cat": "культура", "val1": 80, "val2": 11 },
+                { "cat": "бізнес", "val1": 35, "val2": 50 }
+            ]
+
+            var chart,
+                chart_width = 180,
+                chart_height = 280;
+
+            var xFrom = d3.scaleLinear()
+                .domain([0, 200])
+                .range([0, chart_width / 2]);
+
+
+            var xTo = d3.scaleLinear()
+                .domain([200, 0])
+                .range([chart_width / 2, chart_width]);
+
+            var chart = svg
+                .append("g")
+                .attr("id", "bar-chart-vis")
+                .attr('class', 'chart')
+                .attr("transform", `translate(75,50)`)
+
+
+            var chart_y = d3.scaleBand()
+                .domain(barchart_data.map(function (d) { return d.cat }))
+                .range([chart_height, 10])
+                .padding(0.7);
+
+            chart.selectAll("rect.left")
+                .data(barchart_data)
+                .enter().append("rect")
+                .attr("x", function (d) { return xFrom(d.val1) })
+                .attr("y", function (d) { return chart_y(d.cat) + chart_y.bandwidth() / 4 })
+                .attr("class", "left")
+                .attr("width", function (d) {
+                    return chart_width - xFrom(d.val1)
+                })
+                .attr("height", chart_y.bandwidth() / 2)
+                .style("fill", function (d) { return colorSheme(d.cat) });
+
+            chart.selectAll("rect.right")
+                .data(barchart_data)
+                .enter().append("rect")
+                .attr("x", xTo(0))
+                .attr("y", function (d) { return chart_y(d.cat) })
+                .attr("class", "right")
+                .attr("width", function (d) { return xTo(d.val2) })
+                .attr("height", chart_y.bandwidth())
+                .style("fill", function (d) { return colorSheme(d.cat) })
+                .attr("rx", 4)
+                .attr("ry", 4);
+
+
+
+            chart.selectAll("text.label")
+                .data(barchart_data)
+                .enter().append("text")
+                .attr("x", xTo(0))
+                .attr("y", function (d) { return chart_y(d.cat) - 5 })
+                .attr("class", "right")
+                .text(function (d) { return d.cat })
+                .style("fill", function (d) { return colorSheme(d.cat) })
+                .style("fill-opacity", 0.7)
+                .style("text-anchor", "middle")
+        });
+
+
+        function randBetween(min, max) {
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+
+    </script>
 
 </body>
+
 </html>
