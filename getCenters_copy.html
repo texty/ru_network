@@ -10,8 +10,9 @@
     <script src="lib/underscore.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
     <script src="lib/d3v5.min.js"></script>
     <!-- скрипт з грідом трохи поправила відповідно до того, який був на версії 3. Він краще працює, враховує розмір одиниці і кількість колонок -->
     <script src="lib/d3_v4_grid.js"></script>
@@ -35,13 +36,24 @@
         stroke-opacity: 0.5;
     }
 
-    .switch {
+    .switch-wrapper {
         background-color: #191919;
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 10px 0;
+    }
+
+    .switch {
+        display: flex;
+        justify-content: center;
+    }
+
+    .switch label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
     }
 
     .switch button {
@@ -53,13 +65,12 @@
         font-size: 18px;
         font-family: 'Roboto Mono', monospace;
         cursor: pointer;
-    } 
+    }
 
     .switch button.active {
         background-color: white;
         border: 0px;
         color: #191919;
-
     }
 
     svg text {
@@ -70,11 +81,11 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        transform: translate(-50%,-50%);
-        width:400px;
+        transform: translate(-50%, -50%);
+        width: 400px;
         height: 400px;
         border-radius: 50%;
-        background-color: #000000cf;       
+        background-color: #000000cf;
         border: 5px solid #404040;
         z-index: 1000;
         display: none;
@@ -85,30 +96,67 @@
     }
 
     .eye-switch {
-        cursor: pointer
+        cursor: pointer;
+        /* display: flex;
+        align-items: center; */
+    }
+
+    #is_ru {
+        margin-right: 50px;
+    }
+
+    input[type="checkbox"] {
+        content: url('img/oko.svg');
+        appearance: none;
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+    }
+
+    input[type="checkbox"]:checked {
+        content: url('img/oko2.svg');
+    }
+
+    .bar-switch {
+        cursor: pointer;
+        fill: silver;
+    }
+
+    .bar-switch.active {
+        text-decoration-line: underline;
+    text-underline-offset: 2px;
     }
 </style>
 
 
 <body>
-    <div class='switch'>
+    <div class='switch-wrapper'>
+        <div class="switch" style="padding-right: 20px; border-right: 1px solid silver;">
         <button id='change_by_country' class='active'>КРАЇНИ</button>
-<!--         <button id='change_by_sphere_grid'>ВИДИ ДІЯЛЬНОСТІ</button>
- -->        <button id='change_by_sphere'>ВИДИ ДІЯЛЬНОСТІ 2</button> 
-        <button id='change_by_ideology'>ПРАВІ/ЛІВІ</button> 
-        <p style='color: white;font-size: 20px; font-family: "Roboto Mono", monospace;'> 
-            <span id='is_ru' class='eye-switch' >Росіяни</span> | <span id='is_watcher' class='eye-switch' >Спостерегачі</span> </p>
+        <!-- <button id='change_by_sphere_grid'>ВИДИ ДІЯЛЬНОСТІ</button> --> 
+        <button id='change_by_sphere_nested'>ВИДИ ДІЯЛЬНОСТІ_new</button>
+        <!-- <button id='change_by_sphere'>ВИДИ ДІЯЛЬНОСТІ_old</button>
+        <button id='change_by_ideology'>ПРАВІ/ЛІВІ</button> -->
     </div>
+    <div class="switch" style='margin-left: 20px;'>
+        <p style='color: white;font-size: 20px; font-family: "Roboto Mono", monospace; display: flex;'>
+            <label>Росіяни <input id='is_ru' class='eye-switch' type="checkbox"/></label>
+            <label>Спостерегачі <input id='is_watcher' class='eye-switch' type="checkbox"/></label>
+        </p>
+    </div>    
+    </div>
+    
 
     <div id='test-tooltip'></div>
-
     <svg id="scatterplot"></svg>
 
     <script src='js/figures.js'></script>
     <script>
+        //поріг переходу до viewbox, щоб влазило на мобільну версію.
+        var TRESHOLD = 1150;
 
         var MARGINS = { top: 180, right: 90, bottom: 20, left: 70 },
-            WIDTH = window.innerWidth > 1080 ? window.innerWidth * 0.95 : 1080,
+            WIDTH = window.innerWidth > TRESHOLD ? window.innerWidth * 0.98 : TRESHOLD,
             innerWIDTH = WIDTH - MARGINS.left - MARGINS.right,
             HEIGHT = 800,
             DIAMETER = 1200;
@@ -116,15 +164,19 @@
         var colorSheme = d3.scaleOrdinal()
             .domain(['політика', "громадська", "медіа", "експерт", "культура", 'бізнес', "освіта", "церква"])
             .range(["#9E5C39", "#7B2C3F", "#AAA63A", "#7C84A9", "#896179", "#E17C8E", "#2A987F", "green"])
-            .unknown("silver");;
+            .unknown("silver");
 
-        var shapes = [bacillus2, bacillus3];
+        //var shapes = [bacillus_p_1, bacillus_p_2, bacillus_p_3, bacillus_p_4, bacillus_p_5, bacillus_p_6, bacillus_o_1, bacillus_o_2, bacillus_o_3, bacillus_o_4, bacillus_o_5, bacillus_o_6];
+        var shapes_people = [bacillus_p_1, bacillus_p_2, bacillus_p_3, bacillus_p_4, bacillus_p_5, bacillus_p_6];
+        var shapes_org = [bacillus_o_1, bacillus_o_2, bacillus_o_3, bacillus_o_4, bacillus_o_5, bacillus_o_6];
 
         var is_ru = false;
         var is_watcher = false;
         var is_people = false;
         var is_organization = false;
-        var screen = "first";      
+        var screen = "first";
+
+        
 
         d3.csv("data/test_full_data_new.csv").then(function (df) {
             /* потрібно для pack layout */
@@ -132,17 +184,17 @@
 
 
             var svg = d3.select("#scatterplot")
-                .attr("width", window.innerWidth > 1080 ? WIDTH : "100%")
-                .attr("height", window.innerWidth > 1080 ? HEIGHT : "100%")
-                .attr("viewBox", function(){
-                    return window.innerWidth < 1080 ? `0 0 1080 1800` : null
+                .attr("width", window.innerWidth > TRESHOLD ? WIDTH : "100%")
+                .attr("height", window.innerWidth > TRESHOLD ? HEIGHT : "100%")
+                .attr("viewBox", function () {
+                    return window.innerWidth < TRESHOLD ? `0 0 1150 1950` : null
                 });
 
             //основна візуалізація    
             var c_group = svg
                 .append("g")
                 .attr("id", "main-vis")
-                .attr("transform", `translate(160, 160)`);
+                .attr("transform", `translate(160, 180)`);
 
             //легенда із бар-чартами
             var chart = svg
@@ -152,24 +204,31 @@
                 .attr("transform", `translate(75,75)`);
 
 
-            var grid = d3.grid()                
+            var grid = d3.grid()
                 .padding([25, 70]);
 
             var packLayout = d3.pack()
                 .size([WIDTH, HEIGHT])
                 .padding(function (d) {
-                return d.height > 1 ? 20 / 0.35 : 3
-            });
+                    return d.height > 1 ? 20 / 0.35 : 3
+                });
 
 
-            /* переключалка екранів */               
-            prepare_data_countries_vis("country", 125); 
+            /* переключалка екранів */
+            prepare_data_countries_vis("country", 120);
 
             d3.select('#change_by_country').on("click", function () {
                 screen = "first";
-                prepare_data_countries_vis("country", 125); 
+                prepare_data_countries_vis("country", 120);
                 drawBars(barchart_data)
             });
+
+            d3.select('#change_by_sphere_nested').on("click", function () {
+                screen = "second";
+                prepare_data_nested_pack();
+                drawBars(barchart_data2);
+            })
+
 
             d3.select('#change_by_sphere').on("click", function () {
                 screen = "second";
@@ -178,59 +237,62 @@
             })
 
 
-           d3.select('#change_by_sphere_grid').on("click", function () {
-            //prepare_data_countries_vis("domain", 165);
-            prepare_data_countries_vis("entity_type", 190);  
+            d3.select('#change_by_sphere_grid').on("click", function () {
+                //prepare_data_countries_vis("domain", 165);
+                prepare_data_countries_vis("entity_type", 190);
                 drawBars(barchart_data2)
             });
 
             d3.select('#change_by_ideology').on("click", function () {
-                prepare_data_sphere_vis("ideological_platform"); 
+                prepare_data_sphere_vis("ideological_platform");
                 drawBars(barchart_data2)
             });
 
             /* включити-виключити окремі категорії (росіяни/спостерігачі тощо) */
-            d3.select("#is_ru").on("click", function(){
+            d3.select("#is_ru").on("click", function () {
                 is_watcher = false;
-                is_ru = !is_ru; 
-                if(is_ru){
-                    d3.selectAll("path.point").style("fill-opacity", function(d){                     
+                is_ru = !is_ru;
+                d3.select("#is_watcher").property("checked", false);
+
+                if (is_ru) {
+                    d3.selectAll("path.point").style("fill-opacity", function (d) {
                         return d.collaboration_type === 'росіяни' ? 0.8 : 0.2
                     })
                 } else {
                     d3.selectAll("path.point").style("fill-opacity", 0.8)
-                } 
+                }
             });
 
-            d3.select("#is_watcher").on("click", function(){
+            d3.select("#is_watcher").on("click", function () {
                 is_ru = false;
-                is_watcher = !is_watcher; 
-                if(is_watcher){
-                    d3.selectAll("path.point").style("fill-opacity", function(d){                     
+                is_watcher = !is_watcher;
+                d3.select("#is_ru").property("checked", false);
+                if (is_watcher) {
+                    d3.selectAll("path.point").style("fill-opacity", function (d) {
                         return d.observer_border_violation != '' ? 0.8 : 0.2
                     })
                 } else {
                     d3.selectAll("path.point").style("fill-opacity", 0.8)
-                } 
+                }
             });
 
-            
 
-       //ideological_platform     
+
+            //ideological_platform     
 
             function prepare_data_countries_vis(nest_var, setR) {
 
                 var nest = d3.nest()
                     .key(function (d) { return d[nest_var] })
                     .entries(df)
-                    .sort(function (a, b) { return b.values.length - a.values.length });    
-                    
+                    .sort(function (a, b) { return b.values.length - a.values.length });
+
                 var radius = setR;
                 var innerRadius = radius - 18;
                 var nodeSize = radius * 2;
 
                 //к-ть колонок для гріда
-                var cols_default = Math.round(innerWIDTH / nodeSize)
+                var cols_default = Math.floor(innerWIDTH / nodeSize)
                 var cols_amount = cols_default > 1 ? cols_default : 1;
 
                 grid.cols(cols_amount)
@@ -253,8 +315,8 @@
                 var rows_amount = Math.ceil((data_for_grid.length + 2) / cols_amount);
                 var calculated_height = (rows_amount * nodeSize) + (rows_amount * 70 + 100)
 
-                svg.attr("height", function(){
-                   return  window.innerWidth > 1080 ? calculated_height : "100%";                    
+                svg.attr("height", function () {
+                    return window.innerWidth > TRESHOLD ? calculated_height : "100%";
                 })
 
                 //робимо набір з x та y координатами для кожного елементу гріда
@@ -262,7 +324,7 @@
                 var countries_cy = {};
                 for (var i = 0; i < data_for_grid.length; i++) {
                     countries_cx[data_for_grid[i].key] = data_for_grid[i].x
-                    countries_cy[data_for_grid[i].key] = data_for_grid[i].y 
+                    countries_cy[data_for_grid[i].key] = data_for_grid[i].y
                 }
 
                 //розраховуємо x та y координату кожної бактерії в межах коло відповідно до гріду.
@@ -276,52 +338,76 @@
                     d.x = randX;
                     d.y = randY;
                     d.r = 5
-                });           
+                });
 
 
 
                 doSimulation(df, data_for_grid)
 
-                }            
+            }
 
+            /* екран 2 */
+            function prepare_data_nested_pack() {
 
-                function prepare_data_sphere_vis(nest_var) {                
+                var vCsvData = df.map(function (d, i) {
+                    if (d.domain === "політика") {
+                        return { id: "c" + i, parentId: d.ideological_platform }
+                    } else {
+                        return { id: "c" + i, parentId: d.domain }
+                    }
+                });
 
-                var nest = d3.nest()
-                    .key(function (d) { return d[nest_var] })
-                   /*  .key(function(d) {                        
-                        return d.ideological_platform; })  */
-                    .entries(df)
-                    .sort(function (a, b) { return b.values.length - a.values.length })
-                     .map(function (group) {
+                vCsvData.unshift({ id: "root", parentId: '' })
+
+                vCsvData.push({ id: "права", parentId: 'політика' })
+                vCsvData.push({ id: "ліва", parentId: 'політика' })
+                vCsvData.push({ id: "центриська", parentId: 'політика' })
+                vCsvData.push({ id: "інші", parentId: 'політика' })
+
+                vCsvData.push({ id: "політика", parentId: 'root' })
+                vCsvData.push({ id: "медіа", parentId: 'root' })
+                vCsvData.push({ id: "експерт", parentId: 'root' })
+                vCsvData.push({ id: "бізнес", parentId: 'root' })
+                vCsvData.push({ id: "церква", parentId: 'root' })
+                vCsvData.push({ id: "культура", parentId: 'root' })
+                vCsvData.push({ id: "громадська", parentId: 'root' })
+                vCsvData.push({ id: "освіта", parentId: 'root' })
+
+                vCsvData.forEach(function (d) { d.size = 1 });
+                var stratify = d3.stratify();
+                var vData = stratify(vCsvData);
+
+                var vWidth = window.innerWidth > 1400 ? 1000 : 850;
+                var packLayoutLeftMargin = window.innerWidth > 1400 ? 350 :
+                            window.innerWidth > 1300 ? 200 : 120;
+
+                var vLayout = d3.pack()
+                    .size([vWidth, vWidth])
+                    .padding(function (d) {
+                       // return d.height >= 2 ? 80 : 30
+                        return d.height >= 2 & d.height != 4 ? 80 : 30
+                    });
+
+                // Layout + Data
+                var vRoot = d3.hierarchy(vData).sum(function (d) { return d.data.size; });
+                var vNodes = vRoot.descendants();
+                vLayout(vRoot);
+
+                var data_for_grid = vRoot.descendants()
+                    .filter(function (d) { return d.height === 2 | d.height === 1 })
+                    .map(function (d) {
                         return {
-                            name: group.key,
-                            children: group.values,            
-                            size: group.values.length
+                            "key": d.data.data.id,
+                            "depth": d.data.depth,
+                            "height": d.data.height,
+                            "x": d.y + packLayoutLeftMargin,
+                            "y": d.x - vWidth/3.5,
+                            "r": d.r
+
                         }
-                    });   
+                    });
 
-                var data_2 = {
-                    "name": "root",
-                    "children": nest
-                }
-
-                
-
-                var rootNode = d3.hierarchy(data_2);                
-                rootNode.sum(function (d) { return d.size; });
-                packLayout(rootNode);   
-                
-                var data_for_grid = rootNode.descendants()
-                    .filter(function (d) { return d.depth === 1 })
-                    .map(function(d){
-                        return {
-                            "key": d.data.name,
-                            "x": d.x,
-                            "y": d.y - 180,
-                            "r": d.r 
-                        }
-                    }); 
+                    console.log(data_for_grid)
 
                 var domain_cx = {};
                 var domain_cy = {};
@@ -330,12 +416,80 @@
                 for (var i = 0; i < data_for_grid.length; i++) {
                     domain_cx[data_for_grid[i].key] = data_for_grid[i].x
                     domain_cy[data_for_grid[i].key] = data_for_grid[i].y
-                    domain_r[data_for_grid[i].key] = data_for_grid[i].r 
+                    domain_r[data_for_grid[i].key] = data_for_grid[i].r
+                }
+
+                df.forEach(function (d) {
+                    var NEST_VAR = d.domain === "політика" ? d.ideological_platform : d.domain;
+                    let innerRadius = domain_r[NEST_VAR] - 20;
+
+                    //формула рендомна точка на диску
+                    var randAngle = Math.random() * Math.PI * 2;
+                    var randRadius = Math.sqrt(~~(Math.random() * innerRadius * innerRadius));;
+                    var randX = domain_cx[NEST_VAR] + randRadius * Math.cos(randAngle);
+                    var randY = domain_cy[NEST_VAR] + randRadius * Math.sin(randAngle);
+                    d.x = randX;
+                    d.y = randY;
+                    d.r = 4.5
+                });
+
+                doSimulation(df, data_for_grid)
+
+
+            }
+
+
+            function prepare_data_sphere_vis(nest_var) {
+
+                var nest = d3.nest()
+                    .key(function (d) { return d[nest_var] })
+                    /*  .key(function(d) {                        
+                         return d.ideological_platform; })  */
+                    .entries(df)
+                    .sort(function (a, b) { return b.values.length - a.values.length })
+                    .map(function (group) {
+                        return {
+                            name: group.key,
+                            children: group.values,
+                            size: group.values.length
+                        }
+                    });
+
+                var data_2 = {
+                    "name": "root",
+                    "children": nest
+                }
+
+
+
+                var rootNode = d3.hierarchy(data_2);
+                rootNode.sum(function (d) { return d.size; });
+                packLayout(rootNode);
+
+                var data_for_grid = rootNode.descendants()
+                    .filter(function (d) { return d.depth === 1 })
+                    .map(function (d) {
+                        return {
+                            "key": d.data.name,
+                            "x": d.x,
+                            "y": d.y - 180,
+                            "r": d.r
+                        }
+                    });
+
+                var domain_cx = {};
+                var domain_cy = {};
+                var domain_r = {};
+
+                for (var i = 0; i < data_for_grid.length; i++) {
+                    domain_cx[data_for_grid[i].key] = data_for_grid[i].x
+                    domain_cy[data_for_grid[i].key] = data_for_grid[i].y
+                    domain_r[data_for_grid[i].key] = data_for_grid[i].r
                 }
 
                 df.forEach(function (d) {
                     let innerRadius = domain_r[d[nest_var]] - 30
-                    
+
                     //формула рендомна точка на диску
                     var randAngle = Math.random() * Math.PI * 2;
                     var randRadius = Math.sqrt(~~(Math.random() * innerRadius * innerRadius));;
@@ -351,218 +505,219 @@
 
 
             //робимо симуляцію
-            function doSimulation(row_data, grid_data){                       
+            function doSimulation(row_data, grid_data) {
 
-            let sim = d3.forceSimulation(row_data);
-            sim.force("collision", d3.forceCollide(d => d.r));
-            sim.on('tick', drawPlot); 
-             setTimeout(function(){
-                sim.stop()
-            }, 5000)  
-           
-            function drawPlot() {
+                let sim = d3.forceSimulation(row_data);
+                sim.force("collision", d3.forceCollide(d => d.r));
+                sim.on('tick', drawPlot);
+                setTimeout(function () {
+                    sim.stop()
+                }, 5000)
 
-                //грід 
-                var circles = c_group.selectAll("circle.grid-circle").data(grid_data);
-                var labels = c_group.selectAll("text").data(grid_data);
+                function drawPlot() {
 
-                circles.exit().remove()
+                    //грід 
+                    var circles = c_group.selectAll("circle.grid-circle").data(grid_data);
+                    var labels = c_group.selectAll("text").data(grid_data);
 
-                circles
-                    .enter()
-                    .append('circle')
-                    .attr("class", "grid-circle")
-                    .attr("cx", function (d) { return d.x + 10 })
-                    .attr("cy", function (d) { return d.y + 7 })
-                    .attr("r", function (d) { return d.r < 60 ? d.r + 15 : d.r + 5 });
+                    circles.exit().remove()
 
-                circles
-                    .transition()
-                    .duration(200)
-                    .attr("class", "grid-circle")
-                    .attr("cx", function (d) { return d.x + 10 })
-                    .attr("cy", function (d) { return d.y + 7 })
-                    .attr("r", function (d) { return  d.r < 60 ? d.r + 10 : d.r + 5  });
+                    circles
+                        .enter()
+                        .append('circle')
+                        .attr("class", "grid-circle")
+                        .attr("cx", function (d) { return d.x + 10 })
+                        .attr("cy", function (d) { return d.y + 7 })
+                        .attr("r", function (d) { return d.r  });
 
-                // підписи до гріда    
-                labels.exit().remove()
+                    circles
+                        .transition()
+                        .duration(200)
+                        .attr("class", "grid-circle")
+                        .attr("cx", function (d) { return d.x + 10 })
+                        .attr("cy", function (d) { return d.y + 7 })
+                        .attr("r", function (d) { return d.r  });
 
-                labels.enter()
-                    .append('text')
-                    .attr("x", function (d) { return d.x + 10 })
-                    .attr("y", function (d) { return d.y - d.r })
-                    .text(function (d) { return d.key })
-                    .style("fill", function (d) { 
-                        console.log(d)
-                        return colorSheme(d.key) 
-                    })
-                    .style("text-anchor", "middle");
+                    // підписи до гріда    
+                    labels.exit().remove()
 
-                labels
-                    .transition()
-                    .duration(200)
-                    .attr("x", function (d) { return d.x + 10 })
-                    .attr("y", function (d) { return d.y - d.r })
-                    .text(function (d) { return d.key })
-                    .style("fill", function (d) { return colorSheme(d.key) })
-                    .style("text-anchor", "middle");
+                    labels.enter()
+                        .append('text')
+                        .attr("x", function (d) { return d.x + 10 })
+                        .attr("y", function (d) { return d.y - d.r })
+                        .text(function (d) { return d.key })
+                        .style("fill", function (d) {
+                            return colorSheme(d.key)
+                        })
+                        .style("text-anchor", "middle");
 
-
-                //точки    
-                let points = c_group.selectAll("path.point").data(row_data);
-
-                points.enter()
-                    .append("path")
-                    .attr("class", "point")
-                    .attr("d", function () { return shapes[randBetween(0, 1)] })
-                    .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.4)` })
-                    .attr("r", function (d) { return d.r })
-                    .style("fill", function (d) { return colorSheme(d.domain) })
-                    .on("click", function(d){
-                        //d3.select("#test-tooltip").style("display", "block");
-                        console.log(d)
-                    });
+                    labels
+                        .transition()
+                        .duration(200)
+                        .attr("x", function (d) { return d.x + 10 })
+                        .attr("y", function (d) { return d.y - d.r })
+                        .text(function (d) { return d.key })
+                        .style("fill", function (d) { return colorSheme(d.key) })
+                        .style("text-anchor", "middle");
 
 
-                //rotate(${Math.random() * Math.PI * 2 })
-                //rotate(${ Math.random() * 360} )
-                points
-                    .transition()
-                    .duration(200)
-                    .attr("class", "point")
-                    .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.4)` })
+                    //точки    
+                    let points = c_group.selectAll("path.point").data(row_data);
+
+                    points.enter()
+                        .append("path")
+                        .attr("class", "point")
+                        .attr("d", function (d) { return d.entity_type === 'організація' ? shapes_org[randBetween(0, 5)] : shapes_people[randBetween(0, 5)] })
+                        .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.35)` })
+                        .attr("r", function (d) { return d.r })
+                        .style("fill", function (d) { return colorSheme(d.domain) })
+                        .on("click", function (d) {
+                            //d3.select("#test-tooltip").style("display", "block");
+                        });
+
+
+                    //rotate(${Math.random() * Math.PI * 2 })
+                    //rotate(${ Math.random() * 360} )
+                    points
+                        .transition()
+                        .duration(200)
+                        .attr("class", "point")
+                        .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.35)` })
 
                 }
-            } 
-               
+            }
+
             /* ----------------------------------------
             ----------------- Бар-чарт -----------------
             ------------------------------------------  */
 
             var barchart_data = d3.nest()
-                .key(function(d) { return d.domain; })
-                .rollup(function(leaves) { 
-                    let g1 = leaves.filter(function(d){ return d.entity_type === "людина"});                    
-                    let g2 = leaves.filter(function(d){ return d.entity_type === "організація"})                      
-                    return { "val1": g1.length, "val2": g2.length } 
+                .key(function (d) { return d.domain; })
+                .rollup(function (leaves) {
+                    let g1 = leaves.filter(function (d) { return d.entity_type === "людина" });
+                    let g2 = leaves.filter(function (d) { return d.entity_type === "організація" })
+                    return { "val1": g1.length, "val2": g2.length }
                 })
                 .entries(df)
-                 .map(function(group){
-                    return {  "cat": group.key, "val1": group.value.val1, "val2": group.value.val2 } 
+                .map(function (group) {
+                    return { "cat": group.key, "val1": group.value.val1, "val2": group.value.val2 }
                 });
-         
 
-             /* фейк-дата */    
-             var barchart_data2 = d3.nest()
-                .key(function(d) { return d.country; })
-                .rollup(function(leaves) { 
-                    let g1 = leaves.filter(function(d){ return d.entity_type === "людина"});                    
-                    let g2 = leaves.filter(function(d){ return d.entity_type === "організація"})                      
-                    return { "val1": g1.length, "val2": g2.length } 
+
+            /* фейк-дата */
+            var barchart_data2 = d3.nest()
+                .key(function (d) { return d.country; })
+                .rollup(function (leaves) {
+                    let g1 = leaves.filter(function (d) { return d.entity_type === "людина" });
+                    let g2 = leaves.filter(function (d) { return d.entity_type === "організація" })
+                    return { "val1": g1.length, "val2": g2.length }
                 })
                 .entries(df)
-                 .map(function(group){
-                    return {  "cat": group.key, "val1": group.value.val1, "val2": group.value.val2 } 
+                .map(function (group) {
+                    return { "cat": group.key, "val1": group.value.val1, "val2": group.value.val2 }
                 });
 
             var chart_width = 300,
                 chart_height = 280;
-            
-            var xFrom = d3.scaleLinear()               
+
+            var xFrom = d3.scaleLinear()
                 .range([0, chart_width]);
-          
+
             //apend Люди    
             chart.append("path")
-                .attr("d", bacillus3)
+                .attr("d", bacillus_people2)
                 .attr("transform", "translate(-40,-70)scale(0.8)")
                 .attr("fill", "silver");
-                    
+
             chart.append("text")
                 .text("Люди")
-                .attr("transform", "translate(-10,-10)")
-                .attr("fill", "silver")
-                .style("text-anchor", "middle")
-                .style("cursor", "pointer")
-                .on("click", function(){
-                    d3.selectAll("path.point").style("fill-opacity", 0.8);
-                    if(screen === "first"){
-                        barchart_data.sort(function(a,b){ return a.val1 - b.val1});
+                .attr("transform", "translate(-10,-12)")
+                .attr('class', "bar-switch")
+                .style("text-anchor", "middle")               
+                .on("click", function () {
+                    d3.selectAll("path.point").style("fill-opacity", 1);
+                    d3.selectAll('.bar-switch').classed("active", false);
+                    d3.select(this).classed("active", true);
+                    if (screen === "first") {
+                        barchart_data.sort(function (a, b) { return a.val1 - b.val1 });
                         drawBars(barchart_data)
                     } else {
-                        barchart_data2.sort(function(a,b){ return a.val1 - b.val1});
+                        barchart_data2.sort(function (a, b) { return a.val1 - b.val1 });
                         drawBars(barchart_data2)
                     }
-                    is_people = !is_people;  
-                    is_organization = false;                     
-                    if(is_people){
-                            d3.selectAll("path.point").style("fill-opacity", function(d){                     
-                                return d.entity_type === 'людина' ? 0.8 : 0.2
-                            })
-                        } else {
-                            d3.selectAll("path.point").style("fill-opacity", 0.8)
-                    } 
+                    is_people = !is_people;
+                    is_organization = false;
+                    if (is_people) {
+                        d3.selectAll("path.point").style("fill-opacity", function (d) {
+                            return d.entity_type === 'людина' ? 1 : 0.2
+                        })
+                    } else {
+                        d3.selectAll("path.point").style("fill-opacity", 1)
+                    }
 
-                        
-                    
+
+
                 });;
 
             //організації
             chart.append("path")
-                .attr("d", bacillus2)
+                .attr("d", bacillus_org)
                 .attr("transform", `translate(${chart_width},-70)scale(0.8)`)
                 .attr("fill", "silver");
-                    
+
             chart.append("text")
                 .text("Організації")
-                .attr("transform", `translate(${chart_width - 20}, -10)`)
-                .attr("fill", "silver")
-                .style("text-anchor", "start")
-                .style("cursor", "pointer")
-                .on("click", function(){
-                    d3.selectAll("path.point").style("fill-opacity", 0.8);
-                    if(screen === "first"){
-                        barchart_data.sort(function(a,b){ return a.val2 - b.val2});
+                .attr("transform", `translate(${chart_width - 20}, -12)`)
+                .attr('class', "bar-switch")
+                .style("text-anchor", "start")              
+                .on("click", function () {
+                    d3.selectAll("path.point").style("fill-opacity", 1);
+                    d3.selectAll('.bar-switch').classed("active", false);
+                    d3.select(this).classed("active", true);
+                    if (screen === "first") {
+                        barchart_data.sort(function (a, b) { return a.val2 - b.val2 });
                         drawBars(barchart_data)
                     } else {
-                        barchart_data2.sort(function(a,b){ return a.val2 - b.val2});
+                        barchart_data2.sort(function (a, b) { return a.val2 - b.val2 });
                         drawBars(barchart_data2)
                     }
 
-                    is_organization = !is_organization;  
-                    is_people = false;                     
-                    if(is_organization){
-                            d3.selectAll("path.point").style("fill-opacity", function(d){                     
-                                return d.entity_type === 'організація' ? 0.8 : 0.2
-                            })
-                        } else {
-                            d3.selectAll("path.point").style("fill-opacity", 0.8)
-                    } 
-                    
+                    is_organization = !is_organization;
+                    is_people = false;
+                    if (is_organization) {
+                        d3.selectAll("path.point").style("fill-opacity", function (d) {
+                            return d.entity_type === 'організація' ? 1 : 0.2
+                        })
+                    } else {
+                        d3.selectAll("path.point").style("fill-opacity", 1)
+                    }
+
                 });
 
             chart.append("text")
                 .text("Загалом")
-                .attr("transform", `translate(${ chart_width/2 }, -10)`)
-                .attr("fill", "silver")
-                .style("text-anchor", "middle")
-                .style("cursor", "pointer")
-                .on("click", function(){
+                .attr("transform", `translate(${chart_width / 2}, -10)`)
+                .attr('class', "bar-switch active")
+                .style("text-anchor", "middle")                              
+                .on("click", function () {
+                    d3.selectAll('.bar-switch').classed("active", false);
+                    d3.select(this).classed("active", true);
                     d3.selectAll("path.point").style("fill-opacity", 0.8);
-                    is_people = false;  
-                    is_organization = false;     
-                    
+                    is_people = false;
+                    is_organization = false;
+
                 })
 
 
 
-            var chart_y = d3.scaleBand();               
+            var chart_y = d3.scaleBand();
             drawBars(barchart_data)
 
-            function drawBars(dat){  
-                
+            function drawBars(dat) {
+
                 xFrom
-                    .domain([-d3.max(dat, function(d){ return d.val1}), d3.max(dat, function(d){ return d.val2})])
-                
+                    .domain([-d3.max(dat, function (d) { return d.val1 }), d3.max(dat, function (d) { return d.val2 })])
+
 
                 var new_height = dat.length * 30;
 
@@ -571,32 +726,32 @@
                     .range([new_height, 10])
                     .padding(0.7);
 
-            
+
                 var left_bars = chart.selectAll("rect.left").data(dat);
-                
+
                 left_bars.exit().remove()
 
                 left_bars.enter().append("rect")
                     .attr("x", function (d) { return xFrom(-d.val1); })
                     .attr("y", function (d) { return chart_y(d.cat) + chart_y.bandwidth() / 3 })
                     .attr("class", "left")
-                    .attr("width", function (d) {                         
+                    .attr("width", function (d) {
                         return xFrom(0) - xFrom(-d.val1)
-                     })
+                    })
                     .attr("height", chart_y.bandwidth() / 3)
                     .style("fill", function (d) {
                         return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                        })
+                    })
                     .attr("rx", 2)
                     .attr("ry", 2);
 
 
                 left_bars.transition().duration(200)
                     .attr("x", function (d) { return xFrom(-d.val1); })
-                    .attr("y", function (d) { return chart_y(d.cat) + chart_y.bandwidth() / 3 })                    
+                    .attr("y", function (d) { return chart_y(d.cat) + chart_y.bandwidth() / 3 })
                     .attr("width", function (d) { return xFrom(0) - xFrom(-d.val1) })
                     .attr("height", chart_y.bandwidth() / 3)
-                    .style("fill", function (d) { 
+                    .style("fill", function (d) {
                         return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
                     });
 
@@ -609,11 +764,11 @@
                     .attr("x", xFrom(0))
                     .attr("y", function (d) { return chart_y(d.cat) })
                     .attr("class", "right")
-                    .attr("width", function (d) { 
-                        return xFrom(d.val2) - chart_width/2
+                    .attr("width", function (d) {
+                        return xFrom(d.val2) - chart_width / 2
                     })
                     .attr("height", chart_y.bandwidth())
-                    .style("fill", function (d) { 
+                    .style("fill", function (d) {
                         return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
                     })
                     .attr("rx", 4)
@@ -622,17 +777,17 @@
                 right_bars.transition().duration(200)
                     .attr("x", xFrom(0))
                     .attr("y", function (d) { return chart_y(d.cat) })
-                    .attr("width", function (d) { 
-                        return xFrom(d.val2) - chart_width/2 
+                    .attr("width", function (d) {
+                        return xFrom(d.val2) - chart_width / 2
                     })
                     .attr("height", chart_y.bandwidth())
-                    .style("fill", function (d) { 
+                    .style("fill", function (d) {
                         return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
                     })
                     .attr("rx", 4)
                     .attr("ry", 4);
 
-                
+
                 var bar_labels = chart.selectAll("text.label").data(dat);
 
                 bar_labels.exit().remove();
@@ -643,8 +798,8 @@
                     .attr("y", function (d) { return chart_y(d.cat) - 5 })
                     .text(function (d) { return d.cat })
                     .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat) 
-                        })
+                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
+                    })
                     .style("fill-opacity", 0.7)
                     .style("text-anchor", "middle")
 
@@ -652,36 +807,36 @@
                     .attr("x", xFrom(0))
                     .attr("y", function (d) { return chart_y(d.cat) - 5 })
                     .text(function (d) { return d.cat })
-                    .style("fill", function (d) {                        
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat) 
+                    .style("fill", function (d) {
+                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
                     })
                     .style("fill-opacity", 0.7)
                     .style("text-anchor", "middle");
 
-                var bar_ticks_left= chart.selectAll("text.tick-left").data(dat);
+                var bar_ticks_left = chart.selectAll("text.tick-left").data(dat);
 
-                    bar_ticks_left.exit().remove();
+                bar_ticks_left.exit().remove();
 
-                    bar_ticks_left.enter().append("text")
-                        .attr("class", "tick-left")
-                        .attr("x", function (d) { return xFrom(-d.val1) - 20 })
-                        .attr("y", function (d) { return chart_y(d.cat) + 10 })                    
-                        .style("fill", function (d) {
-                            return dat === barchart_data2 ? "silver" : colorSheme(d.cat) 
-                            })
-                        .style("text-anchor", "middle")
-                        .text(function(d){ return d.val1})
+                bar_ticks_left.enter().append("text")
+                    .attr("class", "tick-left")
+                    .attr("x", function (d) { return xFrom(-d.val1) - 20 })
+                    .attr("y", function (d) { return chart_y(d.cat) + 10 })
+                    .style("fill", function (d) {
+                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
+                    })
+                    .style("text-anchor", "middle")
+                    .text(function (d) { return d.val1 })
 
                 bar_ticks_left.transition().duration(200)
                     .attr("x", function (d) { return xFrom(-d.val1) - 20 })
-                    .attr("y", function (d) { return chart_y(d.cat) + 10 })                 
-                    .style("fill", function (d) {                        
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat) 
-                    })                   
+                    .attr("y", function (d) { return chart_y(d.cat) + 10 })
+                    .style("fill", function (d) {
+                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
+                    })
                     .style("text-anchor", "middle")
-                    .text(function(d){ return d.val1}) 
+                    .text(function (d) { return d.val1 })
 
-            }             
+            }
         });
 
 
