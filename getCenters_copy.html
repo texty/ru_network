@@ -25,8 +25,13 @@
         background-color: black;
     }
 
-    path.domain {
-        display: none;
+     path.domain {
+       /*  display: none; */
+       fill:silver;       
+    } 
+
+    .tick text{
+        fill: silver;
     }
 
     circle.grid-circle {
@@ -91,6 +96,13 @@
         display: none;
     }
 
+    #test-tooltip p {
+        color: white;
+        width: 80%;
+        margin: auto;
+        color: white;
+    }
+
     .point {
         cursor: pointer;
     }
@@ -124,8 +136,58 @@
 
     .bar-switch.active {
         text-decoration-line: underline;
-    text-underline-offset: 2px;
+        text-underline-offset: 2px;
     }
+
+    .label {
+        fill-opacity: 0.7;
+        text-anchor: middle;
+    }
+
+    .tick-left, .tick-right {
+        text-anchor: middle;
+    }
+
+    .modal {
+        display: none; 
+        position: fixed; 
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%; 
+        height: 100%; 
+        overflow: auto; 
+        background-color: rgb(0,0,0); 
+        background-color: rgba(0,0,0,0.4); 
+        }
+
+        /* Modal Content/Box */
+        .modal-content {            
+            margin: 15% auto; 
+            padding: 20px;            
+            width: 80%; 
+        }
+
+        /* The Close Button */
+        .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+        color: red;
+        text-decoration: none;
+        cursor: pointer;
+        }
+
+        #modal-icon {
+            transform: scale(1.5);
+            display:block;
+            margin: -55px auto auto auto;
+        }
 </style>
 
 
@@ -147,10 +209,28 @@
     </div>
     
 
-    <div id='test-tooltip'></div>
+        <div id="test-tooltip" class="modal">
+
+            <!-- Modal content -->
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <svg id='modal-icon' x="0px" y="0px" width="60px" height="60px">                    
+                    <path id="modal-icon-path" fill="white" d="M46.9,9.3c-0.5-2.1-2.5-4.4-6.4-4c-7.1,0.8-9.9,5.9-11.8,11.3c-1.3,3.5-0.9,7.3-0.4,9.5l0,0c0,0,0,0,0,0.1
+                        c0,0.2,0.1,0.4,0.1,0.6c0.3,1.8,0.3,6.9-8.7,6.7c0,0-1.1,0.8,0.1,1c1,0.2,5.2,1.2,8.4-0.9c0.8-0.5,1.3-1.1,1.6-1.7
+                        c-1.2,3.3-3.9,8.6-9.2,9.3c0,0-1.2,1,0.5,1.1c1.4,0.1,9-3.1,11.2-10.7c0.2,2.7,0,7.8-3.6,9.7c0,0-1.3,1.7,0.7,1.2
+                        c2.1-0.5,6.1-4.5,5.4-12.4c2.5-1,2.6-4.6,2.6-6.9c0-1.5,2.1-4.3,2.1-4.3C40,18,42,16.2,44,15.5C46.2,14.7,47.5,11.9,46.9,9.3z"/>
+                </svg>
+                <p>Будь-яка додаткова інформація про сутність</p>
+            </div>        
+        </div>
+
     <svg id="scatterplot"></svg>
 
     <script src='js/figures.js'></script>
+   <!--  <script src='drawBars.js'></script> -->
+   <script>
+       
+   </script>
     <script>
         //поріг переходу до viewbox, щоб влазило на мобільну версію.
         var TRESHOLD = 1150;
@@ -162,8 +242,8 @@
             DIAMETER = 1200;
 
         var colorSheme = d3.scaleOrdinal()
-            .domain(['політика', "громадська", "медіа", "експерт", "культура", 'бізнес', "освіта", "церква"])
-            .range(["#9E5C39", "#7B2C3F", "#AAA63A", "#7C84A9", "#896179", "#E17C8E", "#2A987F", "green"])
+            .domain(['політика', "громадська", "медіа", "експерт", 'бізнес', "освіта та культура", "церква"])
+            .range(["#9F5D36", "#7983A9", "#646641",  "#7B2C3F", "#E07E8F", "#2A947D", "#E6DC83" ])
             .unknown("silver");
 
         //var shapes = [bacillus_p_1, bacillus_p_2, bacillus_p_3, bacillus_p_4, bacillus_p_5, bacillus_p_6, bacillus_o_1, bacillus_o_2, bacillus_o_3, bacillus_o_4, bacillus_o_5, bacillus_o_6];
@@ -203,6 +283,7 @@
                 .attr('class', 'chart')
                 .attr("transform", `translate(75,75)`);
 
+            window['chart'] = chart;
 
             var grid = d3.grid()
                 .padding([25, 70]);
@@ -256,10 +337,10 @@
 
                 if (is_ru) {
                     d3.selectAll("path.point").style("fill-opacity", function (d) {
-                        return d.collaboration_type === 'росіяни' ? 0.8 : 0.2
+                        return d.collaboration_type === 'росіяни' ? 1 : 0.2
                     })
                 } else {
-                    d3.selectAll("path.point").style("fill-opacity", 0.8)
+                    d3.selectAll("path.point").style("fill-opacity", 1)
                 }
             });
 
@@ -269,10 +350,10 @@
                 d3.select("#is_ru").property("checked", false);
                 if (is_watcher) {
                     d3.selectAll("path.point").style("fill-opacity", function (d) {
-                        return d.observer_border_violation != '' ? 0.8 : 0.2
+                        return d.observer_border_violation != '' ? 1 : 0.2
                     })
                 } else {
-                    d3.selectAll("path.point").style("fill-opacity", 0.8)
+                    d3.selectAll("path.point").style("fill-opacity", 1)
                 }
             });
 
@@ -369,9 +450,9 @@
                 vCsvData.push({ id: "експерт", parentId: 'root' })
                 vCsvData.push({ id: "бізнес", parentId: 'root' })
                 vCsvData.push({ id: "церква", parentId: 'root' })
-                vCsvData.push({ id: "культура", parentId: 'root' })
+                vCsvData.push({ id: "освіта та культура", parentId: 'root' })
                 vCsvData.push({ id: "громадська", parentId: 'root' })
-                vCsvData.push({ id: "освіта", parentId: 'root' })
+              /*   vCsvData.push({ id: "освіта", parentId: 'root' }) */
 
                 vCsvData.forEach(function (d) { d.size = 1 });
                 var stratify = d3.stratify();
@@ -572,7 +653,11 @@
                         .attr("r", function (d) { return d.r })
                         .style("fill", function (d) { return colorSheme(d.domain) })
                         .on("click", function (d) {
-                            //d3.select("#test-tooltip").style("display", "block");
+                            d3.select("#test-tooltip").style("display", "block");
+                            d3.select("#modal-icon-path")
+                                .attr("d", function(){ 
+                                    return d.entity_type === "організація"? bacillus_org : bacillus_people2; })
+                                .style("fill", colorSheme(d.domain))
                         });
 
 
@@ -603,8 +688,6 @@
                     return { "cat": group.key, "val1": group.value.val1, "val2": group.value.val2 }
                 });
 
-
-            /* фейк-дата */
             var barchart_data2 = d3.nest()
                 .key(function (d) { return d.country; })
                 .rollup(function (leaves) {
@@ -618,17 +701,19 @@
                 });
 
             var chart_width = 300,
-                chart_height = 280;
+                chart_height = 300;
 
-            var xFrom = d3.scaleLinear()
+            var сhart_x = d3.scaleLinear()
                 .range([0, chart_width]);
 
-            //apend Люди    
+            var chart_y = d3.scaleBand();
+         
+            //кнопки-переключалки   
             chart.append("path")
                 .attr("d", bacillus_people2)
                 .attr("transform", "translate(-40,-70)scale(0.8)")
                 .attr("fill", "silver");
-
+            
             chart.append("text")
                 .text("Люди")
                 .attr("transform", "translate(-10,-12)")
@@ -696,30 +781,31 @@
 
             chart.append("text")
                 .text("Загалом")
-                .attr("transform", `translate(${chart_width / 2}, -10)`)
+                .attr("transform", `translate(160, -10)`)
                 .attr('class', "bar-switch active")
                 .style("text-anchor", "middle")                              
                 .on("click", function () {
                     d3.selectAll('.bar-switch').classed("active", false);
                     d3.select(this).classed("active", true);
-                    d3.selectAll("path.point").style("fill-opacity", 0.8);
+                    d3.selectAll("path.point").style("fill-opacity", 1);
                     is_people = false;
                     is_organization = false;
-
+                    d3.select("#is_ru").property("checked", false);
+                    d3.select("#is_watcher").property("checked", false);
                 })
+            
 
-
-
-            var chart_y = d3.scaleBand();
             drawBars(barchart_data)
 
             function drawBars(dat) {
 
-                xFrom
-                    .domain([-d3.max(dat, function (d) { return d.val1 }), d3.max(dat, function (d) { return d.val2 })])
+                var new_height = dat.length * 35;
 
+                let xdomain_start = dat === barchart_data ? d3.max(dat, function (d) { return d.val1 }) : 
+                    d3.max(dat, function (d) { return d.val2 });
 
-                var new_height = dat.length * 30;
+                сhart_x
+                    .domain([-xdomain_start, xdomain_start ])
 
                 chart_y
                     .domain(dat.map(function (d) { return d.cat }))
@@ -728,116 +814,122 @@
 
 
                 var left_bars = chart.selectAll("rect.left").data(dat);
+                var right_bars = chart.selectAll("rect.right").data(dat);
+                var bar_labels = chart.selectAll("text.label").data(dat);
+                var bar_ticks_left = chart.selectAll("text.tick-left").data(dat);
+                var bar_ticks_right = chart.selectAll("text.tick-right").data(dat);
 
+                //ліві стовбчики
                 left_bars.exit().remove()
-
+                
                 left_bars.enter().append("rect")
-                    .attr("x", function (d) { return xFrom(-d.val1); })
+                    .attr("x", function (d) { return сhart_x(-d.val1); })
                     .attr("y", function (d) { return chart_y(d.cat) + chart_y.bandwidth() / 3 })
                     .attr("class", "left")
-                    .attr("width", function (d) {
-                        return xFrom(0) - xFrom(-d.val1)
-                    })
+                    .attr("width", function (d) { return сhart_x(0) - сhart_x(-d.val1) })
                     .attr("height", chart_y.bandwidth() / 3)
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
+                    .style("fill", function (d) { return colorSheme(d.cat) })
                     .attr("rx", 2)
                     .attr("ry", 2);
 
-
                 left_bars.transition().duration(200)
-                    .attr("x", function (d) { return xFrom(-d.val1); })
+                    .attr("x", function (d) { return сhart_x(-d.val1); })
                     .attr("y", function (d) { return chart_y(d.cat) + chart_y.bandwidth() / 3 })
-                    .attr("width", function (d) { return xFrom(0) - xFrom(-d.val1) })
-                    .attr("height", chart_y.bandwidth() / 3)
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    });
+                    .attr("width", function (d) { return сhart_x(0) - сhart_x(-d.val1) })
+                    .style("fill", function (d) {return colorSheme(d.cat) });
 
 
-                var right_bars = chart.selectAll("rect.right").data(dat);
-
+                //праві стовбчики
                 right_bars.exit().remove();
 
                 right_bars.enter().append("rect")
-                    .attr("x", xFrom(0))
+                    .attr("x", сhart_x(0))
                     .attr("y", function (d) { return chart_y(d.cat) })
                     .attr("class", "right")
-                    .attr("width", function (d) {
-                        return xFrom(d.val2) - chart_width / 2
-                    })
+                    .attr("width", function (d) { return сhart_x(d.val2) - (chart_width / 2) })
                     .attr("height", chart_y.bandwidth())
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
+                    .style("fill", function (d) { return colorSheme(d.cat) })
                     .attr("rx", 4)
                     .attr("ry", 4);
 
                 right_bars.transition().duration(200)
-                    .attr("x", xFrom(0))
-                    .attr("y", function (d) { return chart_y(d.cat) })
-                    .attr("width", function (d) {
-                        return xFrom(d.val2) - chart_width / 2
-                    })
-                    .attr("height", chart_y.bandwidth())
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
-                    .attr("rx", 4)
-                    .attr("ry", 4);
+                    .attr("x", сhart_x(0))
+                    .attr("y", function (d) { return chart_y(d.cat) }) 
+                    .attr("width", function (d) { return сhart_x(d.val2) - (chart_width / 2) })                 
+                    .style("fill", function (d) { return colorSheme(d.cat) })
+                   
 
-
-                var bar_labels = chart.selectAll("text.label").data(dat);
-
+                //підписи категорій    
                 bar_labels.exit().remove();
 
                 bar_labels.enter().append("text")
                     .attr("class", "label")
-                    .attr("x", xFrom(0))
+                    .attr("x", сhart_x(0))
                     .attr("y", function (d) { return chart_y(d.cat) - 5 })
                     .text(function (d) { return d.cat })
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
-                    .style("fill-opacity", 0.7)
-                    .style("text-anchor", "middle")
+                    .style("fill", function (d) {  return colorSheme(d.cat)  })                    
 
                 bar_labels.transition().duration(200)
-                    .attr("x", xFrom(0))
+                    .attr("x", сhart_x(0))
                     .attr("y", function (d) { return chart_y(d.cat) - 5 })
                     .text(function (d) { return d.cat })
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
-                    .style("fill-opacity", 0.7)
-                    .style("text-anchor", "middle");
+                    .style("fill", function (d) { return colorSheme(d.cat) });                   
 
-                var bar_ticks_left = chart.selectAll("text.tick-left").data(dat);
 
+                //цифри ліворуч    
                 bar_ticks_left.exit().remove();
 
                 bar_ticks_left.enter().append("text")
                     .attr("class", "tick-left")
-                    .attr("x", function (d) { return xFrom(-d.val1) - 20 })
+                    .attr("x", function (d) { return сhart_x(-d.val1) - 20 })
                     .attr("y", function (d) { return chart_y(d.cat) + 10 })
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
-                    .style("text-anchor", "middle")
+                    .style("fill", function (d) { return colorSheme(d.cat) })                   
                     .text(function (d) { return d.val1 })
 
                 bar_ticks_left.transition().duration(200)
-                    .attr("x", function (d) { return xFrom(-d.val1) - 20 })
+                    .attr("x", function (d) { return сhart_x(-d.val1) - 20 })
                     .attr("y", function (d) { return chart_y(d.cat) + 10 })
-                    .style("fill", function (d) {
-                        return dat === barchart_data2 ? "silver" : colorSheme(d.cat)
-                    })
-                    .style("text-anchor", "middle")
-                    .text(function (d) { return d.val1 })
+                    .style("fill", function (d) { return colorSheme(d.cat) })                  
+                    .text(function (d) { return d.val1 });
 
-            }
+                //цифри праворуч    
+                bar_ticks_right.exit().remove();
+
+                bar_ticks_right.enter().append("text")
+                    .attr("class", "tick-right")
+                    .attr("x", function (d) { return сhart_x(d.val2) + 20 })
+                    .attr("y", function (d) { return chart_y(d.cat) + 10 })
+                    .style("fill", function (d) { return colorSheme(d.cat) })                    
+                    .text(function (d) { return d.val2 })
+
+                bar_ticks_right.transition().duration(200)
+                    .attr("x", function (d) { return сhart_x(d.val2) + 20  })
+                    .attr("y", function (d) { return chart_y(d.cat) + 10 })
+                    .style("fill", function (d) { return colorSheme(d.cat) })                   
+                    .text(function (d) { return d.val2 })
+
+            } 
         });
+
+        var modal = document.getElementById("test-tooltip");       
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        
+     
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+        }
 
 
         function randBetween(min, max) {
