@@ -27,6 +27,11 @@
         background-color: black;
     }  
 
+    #navigation {
+        background-color: #191919;
+        padding-bottom: 25px;
+    }
+
     .tick text{
         fill: silver;
     }
@@ -50,7 +55,7 @@
 
     /*  Switch buttons */
     .switch-wrapper {
-        background-color: #191919;
+      
         width: 100%;
         display: flex;
         align-items: center;
@@ -173,11 +178,11 @@
 }
 
 .modal-content::-webkit-scrollbar-track-piece {
-    background: black;
+    background: transparent;
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-  background: silver;
+  background: #c0c0c042;  
   border-radius: 10px;
 }
 
@@ -203,7 +208,7 @@
         display:block;
         margin: 50px;   
           /*   transform: scale(1.5); */
-        animation: orbit 95s linear infinite;   
+        animation: orbit 45s linear infinite;   
         z-index: -1;     
     }
 
@@ -237,32 +242,35 @@
     }
 
     @-webkit-keyframes orbit { 
-        from { -webkit-transform:rotate(0deg) } 
-        to { -webkit-transform:rotate(360deg) } 
+        from { -webkit-transform:rotate(45deg) } 
+        to { -webkit-transform:rotate(405deg) } 
     }
     @-moz-keyframes orbit { 
-        from { -moz-transform:rotate(0deg) } 
-        to { -moz-transform:rotate(360deg) } 
+        from { -moz-transform:rotate(45deg) } 
+        to { -moz-transform:rotate(405deg) } 
     }
     
 </style>
 
 
 <body>
-    <div class='switch-wrapper'>
-        <div class="switch" style="padding-right: 20px; border-right: 1px solid silver;">
-        <button id='change_by_country' class='active'>КРАЇНИ</button>
-        <!-- <button id='change_by_sphere_grid'>ВИДИ ДІЯЛЬНОСТІ</button> --> 
-        <button id='change_by_sphere_nested'>ВИДИ ДІЯЛЬНОСТІ_new</button>
-        <!-- <button id='change_by_sphere'>ВИДИ ДІЯЛЬНОСТІ_old</button>
-        <button id='change_by_ideology'>ПРАВІ/ЛІВІ</button> -->
-    </div>
-    <div class="switch" style='margin-left: 20px;'>
-        <p style='color: white;font-size: 20px; font-family: "Roboto Mono", monospace; display: flex;'>
-            <label>Росіяни <input id='is_ru' class='eye-switch' type="checkbox"/></label>
-            <label>Спостерегачі <input id='is_watcher' class='eye-switch' type="checkbox"/></label>
-        </p>
-    </div>    
+    <div id='navigation'>
+        <div class='switch-wrapper'>
+            <div class="switch" style="padding-right: 20px; border-right: 1px solid silver;">
+                <button id='change_by_country' class='active'>КРАЇНИ</button>            
+                <button id='change_by_sphere_nested'>ВИДИ ДІЯЛЬНОСТІ</button>
+                <!-- <button id='change_by_sphere_grid'>ВИДИ ДІЯЛЬНОСТІ</button> --> 
+                <!-- <button id='change_by_sphere'>ВИДИ ДІЯЛЬНОСТІ_old</button>
+                <button id='change_by_ideology'>ПРАВІ/ЛІВІ</button> -->
+            </div>
+            <div class="switch" style='margin-left: 20px;'>
+                <p style='color: white;font-size: 20px; font-family: "Roboto Mono", monospace; display: flex;'>
+                    <label>Росіяни <input id='is_ru' class='eye-switch' type="checkbox"/></label>
+                    <label>Спостерегачі <input id='is_watcher' class='eye-switch' type="checkbox"/></label>
+                </p>
+            </div>
+        </div>
+        <input id='filter' style='display: block;margin:auto' placeholder="Пошук" type='search'/>
     </div>
     
 
@@ -367,12 +375,14 @@
             d3.select('#change_by_country').on("click", function () {
                 screen = "first";
                 prepare_data_countries_vis("country", 120);
+                d3.select("#test-tooltip").style("display",'none');
                 drawBars(barchart_data)
             });
 
             d3.select('#change_by_sphere_nested').on("click", function () {
                 screen = "second";
                 prepare_data_nested_pack();
+                d3.select("#test-tooltip").style("display",'none');
                 drawBars(barchart_data2);
             })
 
@@ -380,6 +390,7 @@
             d3.select('#change_by_sphere').on("click", function () {
                 screen = "second";
                 prepare_data_sphere_vis("domain");
+                d3.select("#test-tooltip").style("display",'none');
                 drawBars(barchart_data2);
             })
 
@@ -387,6 +398,7 @@
             d3.select('#change_by_sphere_grid').on("click", function () {
                 //prepare_data_countries_vis("domain", 165);
                 prepare_data_countries_vis("entity_type", 190);
+                d3.select("#test-tooltip").style("display",'none');
                 drawBars(barchart_data2)
             });
 
@@ -755,13 +767,7 @@
                             }
                            
                             
-                        });
-                /*         <p><span id='entity-name'>Імʼя </span> <span id='entity-local-name'></span></p>
-                <p id='entity-country'>Країна</p>
-                <p><span id='entity-descriptrion'>Опис </span> <a id="entity-wiki"> Детальніше </a></p>
-                <p><a id='entity-money' href='' target="_blank">Отримував гроші/ зв'язок із російськими структурами</a></p>
-                <p><a id='entity-watcher' href='' target="_blank">Спостерігач, незаконний перетин кордону</a></p>
-                <p><a id='entity-statements' href='' target="_blank">Проросійські заяви</a></p> */
+                        });    
 
                     //rotate(${Math.random() * Math.PI * 2 })
                     //rotate(${ Math.random() * 360} )
@@ -769,9 +775,38 @@
                         .transition()
                         .duration(200)
                         .attr("class", "point")
-                        .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.35)` })
+                        .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.35)` });
 
-                }
+                    d3.select("#filter").on("keyup", function () {
+                        var value = d3.select(this).property("value");
+
+                        console.log(value);
+
+                    if (value) {
+                        var i = 0;
+                        var re = new RegExp(value, "i");
+
+
+                    console.log(re);
+
+                    points.each(function (d) {                   
+                        if (d.name_ukr.match(re)) {                             
+                            d3.select(this).style("opacity", 1);
+
+
+                        } else {
+                            d3.select(this).style("opacity", 0.2);
+                        }
+                        i++;
+                    });
+                    } else {
+
+                        d3.selectAll("path.point").style("opacity", 1);
+
+                    }
+                }); 
+
+                        }
             }
 
             /* ----------------------------------------
@@ -1013,6 +1048,9 @@
             } 
         });
 
+       
+
+
         var modal = document.getElementById("test-tooltip");       
 
         // Get the <span> element that closes the modal
@@ -1028,7 +1066,7 @@
 
         // When the user clicks anywhere outside of the modal, close it
         window.onclick = function(event) {
-        if (event.target == modal) {
+        if (event.target === modal) {
             modal.style.display = "none";
         }
         }
