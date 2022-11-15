@@ -111,6 +111,14 @@
         content: url('img/oko2.svg');
     }
 
+    input[type="search"]::-webkit-search-cancel-button {
+        -webkit-appearance: none;
+        display: none;
+        width: 0;
+        height: 0;
+    }
+        
+
     .bar-switch {
         cursor: pointer;
         fill: silver;
@@ -357,8 +365,6 @@
                 .attr('class', 'chart')
                 .attr("transform", `translate(75,75)`);
 
-            window['chart'] = chart;
-
             var grid = d3.grid()
                 .padding([25, 70]);
 
@@ -371,6 +377,7 @@
 
             /* переключалка екранів */
             prepare_data_countries_vis("country", 120);
+            //d3.select(window).on("resize", location.reload())
 
             d3.select('#change_by_country').on("click", function () {
                 screen = "first";
