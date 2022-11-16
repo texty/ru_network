@@ -19,6 +19,7 @@
     <!-- Load Esri Leaflet from CDN -->
     <script src="https://unpkg.com/esri-leaflet@3.0.4/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/esri-leaflet-vector@3.0.0/dist/esri-leaflet-vector.js"></script>
+
 </head>
 <style>
 
@@ -210,6 +211,8 @@
     </div>
 
     <script>
+            const apiKey = "AAPK66cae70f985f468f96c0b41feca04cf3CunjYzlitzzOKIL4rJYq_LVm51nklmGl30drC6KFyIn4dFnq4O2GcVLCcMg6dFF7";
+
 
     var colorSheme = ["#E8E65E", "#DC8047", "#4E7C89", "#49674E" ];
 
@@ -224,14 +227,23 @@
                 maxZoom:18 
             }).setView([48.5, 5.08], 5);
 
+            L.esri.Vector.vectorBasemapLayer("ArcGIS:DarkGray", {
+        apiKey: apiKey
+    }).addTo(map);
+
+
             L.control.zoom({ position: 'topright'}).addTo(map); 
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png', {
+/*             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
             maxZoom: 20
-}).addTo(map);
+}).addTo(map); */
 
+/* vectorTiles.Default = L.esri.Vector.vectorBasemapLayer(null, {
+    apiKey
+  });
+ */
 d3.csv("data/churches.csv").then(function(df){
 
    
