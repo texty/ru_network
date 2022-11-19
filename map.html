@@ -9,16 +9,14 @@
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
     crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
-    crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
-    crossorigin=""></script>
-
+    <!-- d3 v5 -->
     <script src="lib/d3v5.min.js"></script>
 
-    <!-- Load Esri Leaflet from CDN -->
-    <script src="https://unpkg.com/esri-leaflet@3.0.4/dist/esri-leaflet.js"></script>
-    <script src="https://unpkg.com/esri-leaflet-vector@3.0.0/dist/esri-leaflet-vector.js"></script>
+    <script src="lib/csv2geojson.js"></script>
+
+    <!-- Mapbox -->
+    <link rel="stylesheet" href="lib/mapbox-gl-v2.6.0.css"/>
+    <script src="lib/mapbox-gl-v2.6.0.js"></script>
 
 </head>
 <style>
@@ -51,6 +49,12 @@
          
     .blur-point {
         filter: blur(4px);
+        -webkit-filter:blur(4px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        will-change: filter;
+        transform: translate3d(0,0,0);
+        
          }
 
      /* Modal Content */
@@ -157,6 +161,11 @@
         height: 1.1em;
     }
 
+    @keyframes orbit { 
+        from { -webkit-transform:rotate(45deg) } 
+        to { -webkit-transform:rotate(405deg) } 
+    }
+
     @-webkit-keyframes orbit { 
         from { -webkit-transform:rotate(45deg) } 
         to { -webkit-transform:rotate(405deg) } 
@@ -166,18 +175,7 @@
         to { -moz-transform:rotate(405deg) } 
     }
 
-    .yellow-marker {
-        fill: yellow;
-    }
-
-    .orange-marker {
-        fill: orange;
-    }
-
-    .leaflet-div-icon {
-        background-color: transparent;
-        border: 0px;
-    }
+    
 </style>
 <body>
     <div id='map-nav'>
@@ -218,193 +216,181 @@
             .range(["#49674E", "#ECEA5F","#DF8048"])
             .unknown("silver");
 
-          var map = L.map('mapid', { 
-                zoomControl: false,
-                minZoom: 5,  
-                maxZoom:18 
-            }).setView([48.5, 5.08], 5);
-
-            L.esri.Vector.vectorBasemapLayer("ArcGIS:DarkGray", {
-        apiKey: apiKey
-    }).addTo(map);
-
-
-            L.control.zoom({ position: 'topright'}).addTo(map); 
-
-/*             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-}).addTo(map); */
-
-/* vectorTiles.Default = L.esri.Vector.vectorBasemapLayer(null, {
-    apiKey
-  });
- */
 d3.csv("data/churches.csv").then(function(df){
 
-   
-    var layerGroup = L.layerGroup().addTo(map);
-    var layerGroup2 = L.layerGroup().addTo(map);
-    var layerGroup_svg = L.layerGroup();
+             //convert csv to geojson
+            csv2geojson.csv2geojson(df, {
+                latfield: 'Latitude',
+                lonfield: 'Longitude',        
+                delimiter: ','
+            }, function(err, pointsJSON) { 
 
-  /*   const svgIcon = L.divIcon({
-            html: `
-            <svg
-            width="24"
-            height="40"
-            viewBox="0 0 100 100"
-            version="1.1"
-            preserveAspectRatio="none"
-            xmlns="http://www.w3.org/2000/svg"
-            >
-            <defs>
-                <filter id="f1" x="0" y="0">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
-                </filter>
-            </defs>
-            <path d="M47.1,25.3l-0.5-0.1c0.1-0.9,0-1.4,0-1.4c0-1.2-0.2-2.5-0.8-3.7l1.1-0.7c0.9-0.6,1.1-1.7,0.5-2.6
-	s-1.7-1.1-2.6-0.5L43.7,17c-0.9-0.9-2.1-1.7-3.5-2.2l0.1-1c0.1-1-0.7-1.9-1.7-2c-1-0.1-1.9,0.7-2,1.7l0,0.5c-1.1,0-2.2,0-3.5,0.2
-	l0-1.3c0-1-0.9-1.9-1.9-1.8c-1,0-1.9,0.9-1.8,1.9l0,1.7l-3.7,0.2l-0.5-1.3c-0.4-1-1.4-1.5-2.4-1.1c-1,0.4-1.5,1.4-1.1,2.4l0.2,0.5
-	c-1.5,0.6-2.7,1.7-3.4,3.1l-1.1-0.3c-1-0.2-2,0.4-2.2,1.4c-0.2,1,0.4,2,1.4,2.2l0.9,0.2c-0.1,0.6-0.1,1.1-0.1,1.7
-	c0,0.9,0.1,1.7,0.4,2.5l-1,0.5c-0.9,0.5-1.3,1.6-0.8,2.5c0.5,0.9,1.6,1.3,2.5,0.8l1.1-0.6c1,1.2,2.2,2.1,3.6,2.7l-0.1,0.6
-	c-0.2,1,0.5,2,1.5,2.1h0c1,0.2,2-0.5,2.1-1.5l0.1-0.5l3.5-0.1l0.1,1.3c0.1,1,1,1.8,2,1.7c1-0.1,1.8-1,1.7-2l-0.1-1l3.4-0.1l0.1,0.7
-	c0.2,1,1.2,1.7,2.2,1.5c1-0.2,1.7-1.2,1.5-2.2l-0.1-0.4c2.4-0.7,3.8-2.1,4.6-3.7l0.6,0.1c1,0.2,2-0.4,2.2-1.4
-	C48.7,26.6,48.1,25.6,47.1,25.3z" fill="#49674E" filter="url(#f1)"></path>
-            </svg>`,           
-            iconSize: [10, 10],
+                const LayerJSON = Object.assign({}, pointsJSON)
+
+                mapboxgl.accessToken = 'pk.eyJ1IjoiZHJpbWFjdXMxODIiLCJhIjoiWGQ5TFJuayJ9.6sQHpjf_UDLXtEsz8MnjXw';
+
+            var map = new mapboxgl.Map({
+                container: 'mapid',
+                minZoom: 3,
+                maxZoom: 17,
+                hash: false,
+                tap: false,
+                attributionControl: true,
+                style: 'mapbox://styles/mapbox/dark-v10', // style URL
+                center: [5.08, 48.5],
+                zoom: 3
+             });  
+
+             //map.showCollisionBoxes = true;
             
-            }); */
+            map.dragRotate.disable();
+            map.touchZoomRotate.disableRotation();
+            
+            map.on('load', () => {
 
-            var greenIcon = L.icon({
-                iconUrl: 'img/church_green.svg',
-                iconSize:     [25, 25]             
+                map.addLayer({
+                    'id': 'points-blur',
+                    'type': 'circle',
+                    'maxzoom': 11,
+                    'source': {
+                        'type': 'geojson',
+                        'data': LayerJSON
+                        },              
+                    'paint': {
+                        'circle-radius': 10,
+                        'circle-color': [
+                            'match',
+                            ['get', 'category_for_map'],
+                            'Руська православна церква (Московський патріархат)', "#49674E",
+                            'РПЦ за кордоном',"#ECEA5F",
+                            "#DF8048"
+                        ] ,                        
+                        'circle-blur': 2 
+                        }             
+                    });
+
+
+                map.addLayer({
+                    'id': 'points',
+                    'type': 'circle',
+                    'maxzoom': 4,
+                    'source': {
+                        'type': 'geojson',
+                        'data': LayerJSON
+                        },              
+                    'paint': {
+                        'circle-radius': 3,
+                        'circle-color': [
+                            'match',
+                            ['get', 'category_for_map'],
+                            'Руська православна церква (Московський патріархат)', "#49674E",
+                            'РПЦ за кордоном',"#ECEA5F",
+                            "#DF8048"
+                        ]                    
+                        }             
+                    });
+
+
+                    const yellow_url = 'img/church_green.png';
+                    const green_url = 'img/church_yellow.png';
+                    const orange_url = 'img/church_orange.png';
+                   
+                    map.loadImage(yellow_url, function(err, yellow){
+                        if(err) {
+                            console.log("error", err);
+                            return;
+                        }
+                        map.addImage("yellow_icon", yellow)
+                    });
+
+                    map.loadImage(green_url, function(err, green){
+                        if(err) {
+                            console.log("error", err);
+                            return;
+                        }
+                        map.addImage("green_icon", green)
+                    });
+
+                    map.loadImage(orange_url, function(err, orange){
+                        if(err) {
+                            console.log("error", err);
+                            return;
+                        }
+                        map.addImage("orange_icon", orange)
+                    });
+
+
+                        map.addLayer({
+                            'id': 'markers',
+                            'type': 'symbol',
+                            "minzoom": 4,
+                            'source': {
+                                'type': 'geojson',
+                                'data': LayerJSON
+                                },  
+                            'layout': {
+                                'symbol-placement': "point",
+                                'icon-allow-overlap': true,
+                                //'icon-image': 'yellow_icon',
+                                'icon-image': [
+                                    'match', 
+                                    ['get', 'category_for_map'],
+                                    'Руська православна церква (Московський патріархат)', 'yellow_icon',
+                                    'РПЦ за кордоном','green_icon',
+                                    'orange_icon'
+
+
+                            
+                             ],
+                            "icon-size": 0.3,
+                            "visibility": 'visible'
+                           }
+});
+
+
+            map.on('click', 'markers', (e) => {
+                d3.select("#church-name").text(e.features[0].properties.name);                
+                d3.select("#church-city").text(e.features[0].properties.city);
+                d3.select("#church-country").text(e.features[0].properties.country);
+                d3.select("#church-category").text(e.features[0].properties.stepdaughter);
+                d3.select("#church-address").text(e.features[0].properties.address);              
+                d3.select('#map-modal-icon-path').attr("fill", colorMap(e.features[0].properties.stepdaughter) )
+                d3.select("#map-tooltip").style("display", "block");
             });
 
-            var yellowIcon = L.icon({  iconUrl: 'img/church_yellow.svg', iconSize: [25, 25] });
-            var orangeIcon = L.icon({  iconUrl: 'img/church_orange.svg', iconSize: [25, 25] });
+            map.on('click', 'points', (e) => {
+                d3.select("#church-name").text(e.features[0].properties.name);                
+                d3.select("#church-city").text(e.features[0].properties.city);
+                d3.select("#church-country").text(e.features[0].properties.country);
+                d3.select("#church-category").text(e.features[0].properties.stepdaughter);
+                d3.select("#church-address").text(e.features[0].properties.address);              
+                d3.select('#map-modal-icon-path').attr("fill", colorMap(e.features[0].properties.stepdaughter) )
+                d3.select("#map-tooltip").style("display", "block");
+            });
 
-            df.forEach(function(d){
-                let whicnIcon = d.category_for_map === "Руська православна церква (Московський патріархат)" ? yellowIcon  :
-                    d.category_for_map === "РПЦ за кордоном" ? greenIcon : orangeIcon
 
-                var coordinates = [d.Latitude, d.Longitude];                
-                var marker = new L.Marker(coordinates, { 'className': "point", "icon": whicnIcon}, 800);  
-                marker.name = d.name;
-                marker.city = d.city;
-                marker.category = d.stepdaughter;
-                marker.country = d.country;
-                marker.address = d.address;  
-                
-                marker.on("click", function(d){
-
-                d3.select("#church-name").text(d.sourceTarget.name);                
-                d3.select("#church-city").text(d.sourceTarget.city);
-                d3.select("#church-country").text(d.sourceTarget.country);
-                d3.select("#church-category").text(d.sourceTarget.category);
-                d3.select("#church-address").text(d.sourceTarget.address);              
-                d3.select('#map-modal-icon-path').attr("fill", colorMap(d.sourceTarget.category) )
-                d3.select("#map-tooltip").style("display", "block")
-
-}); 
-
-                marker.addTo(layerGroup_svg);            
-     
-           });
-
-          df.forEach(function(d){
-            var coordinates = [d.Latitude, d.Longitude];                
-            var marker = new L.circleMarker(coordinates, {'className': "blur-point" }, 800);
-            
-             marker.setStyle({                        
-                color: 'transparent', 
-                fillColor: colorMap(d.stepdaughter),                
-                fillOpacity: 0.8,               
-                radius: 6,                            
-            });  
-
-            marker.addTo(layerGroup2)            
-     
+            })
         });
-
-
-        df.forEach(function(d){
-            var coordinates = [d.Latitude, d.Longitude];                
-            var marker = new L.circleMarker(coordinates, {'className': "point"}, 800);         
-  
-            //var marker = new L.Marker(coordinates, {'className': "point", "icon": svgIcon}, 800);  
-            
-            marker.name = d.name;
-            marker.city = d.city;
-            marker.category = d.stepdaughter;
-            marker.country = d.country;
-            marker.address = d.address;
-        
-            marker.setStyle({                        
-                color: colorMap(d.stepdaughter), 
-                fillColor: colorMap(d.stepdaughter),                
-                fillOpacity: 0.8,               
-                radius: 1,                            
-            });   
-
-            marker.addTo(layerGroup)
-            
-            marker.on("click", function(d){
-
-                d3.select("#church-name").text(d.sourceTarget.name);                
-                d3.select("#church-city").text(d.sourceTarget.city);
-                d3.select("#church-country").text(d.sourceTarget.country);
-                d3.select("#church-category").text(d.sourceTarget.category);
-                d3.select("#church-address").text(d.sourceTarget.address);              
-                d3.select('#map-modal-icon-path').attr("fill", colorMap(d.sourceTarget.category) )
-                d3.select("#map-tooltip").style("display", "block")
-
-            }); 
-        });
-
-
-        map.on("zoom", function(){
-            let currentZoom = map.getZoom();
-            if(currentZoom > 5){
-                map.removeLayer(layerGroup)
-              /*   map.removeLayer(layerGroup2) */
-                map.addLayer(layerGroup_svg)
-            } else {
-                map.removeLayer(layerGroup_svg)
-                map.addLayer(layerGroup)
-               /*  map.addLayer(layerGroup2) */
-            }
-            
-        })
-
-
-       
-
-
-
-
 
 
 
             var modal = document.getElementById("map-tooltip");       
 
-// Get the <span> element that closes the modal
-var span = document.getElementsByClassName("close")[0];
+            // Get the <span> element that closes the modal
+            var span = document.getElementsByClassName("close")[0];
 
 
+            // When the user clicks on <span> (x), close the modal
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
 
-
-// When the user clicks on <span> (x), close the modal
-span.onclick = function() {
-    modal.style.display = "none";
-}
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-if (event.target === modal) {
-    modal.style.display = "none";
-}
-}
+            // When the user clicks anywhere outside of the modal, close it
+            window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+            }
 
         })
 
