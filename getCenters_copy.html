@@ -32,8 +32,6 @@
         padding-bottom: 25px;
     }
 
-
-
     /* svg */
 
     path.domain {
@@ -570,9 +568,11 @@
                 var stratify = d3.stratify();
                 var vData = stratify(vCsvData);
 
-                var vWidth = window.innerWidth > 1400 ? 1000 : 850;
-                var packLayoutLeftMargin = window.innerWidth > 1400 ? 350 :
-                            window.innerWidth > 1300 ? 200 : 120;
+                //var vWidth = window.innerWidth > 1400 ? 1000 : 850;
+                vWidth = 1000;
+                var packLayoutLeftMargin = window.innerWidth > 1600 ? window.innerWidth * 0.3 : 160;
+                console.log(window.innerWidth)
+                console.log(packLayoutLeftMargin)
 
                 var vLayout = d3.pack()
                     .size([vWidth, vWidth])
@@ -593,14 +593,12 @@
                             "key": d.data.data.id,
                             "depth": d.data.depth,
                             "height": d.data.height,
-                            "x": d.y + packLayoutLeftMargin -100,
+                            "x": d.y + packLayoutLeftMargin,
                             "y": d.x - vWidth/3,
                             "r": d.r
 
                         }
                     });
-
-                    console.log(data_for_grid)
 
                 var domain_cx = {};
                 var domain_cy = {};
