@@ -321,12 +321,6 @@
         var shapes_people = [bacillus_p_1, bacillus_p_2, bacillus_p_3, bacillus_p_4, bacillus_p_5, bacillus_p_6];
         var shapes_org = [bacillus_o_1, bacillus_o_2, bacillus_o_3, bacillus_o_4, bacillus_o_5, bacillus_o_6];
 
-        //змінні кнопок-переключалок
-        var is_ru = false;
-        var is_watcher = false;
-        var is_people = false;
-        var is_organization = false;
-        
         //перший екран з кружечками грідами або другий pack-layout
         var screen = "first";        
 
@@ -401,49 +395,37 @@
                 d3.selectAll("path.point").style("fill-opacity", 1);
                 d3.selectAll('.filter-button').classed("active", false)
                 d3.select(this).classed("active", true);
-                is_watcher = is_organization = is_ru = is_people = false; 
                 let keyVar =  screen === "first" ? "domain": "country"
                 drawBars(df, keyVar)                
             });
 
             d3.select("#is_people").on("click", function () {
-                /* неактивні інші кнопки */
-                is_watcher = is_organization = is_ru = false;
-                is_people = !is_people;   
-                d3.selectAll('.filter-button').classed("active", false)
-                d3.select(this).classed("active", true);
+                /* неактивні інші кнопки */               
+                d3.selectAll('.filter-button').classed("active", false);               
                 
-                 /* прозорість непотрібним точкам */
-                if (is_people) {
-                    d3.selectAll("path.point").style("fill-opacity", function (d) {
-                        return d.entity_type === 'людина' ? 1 : 0.2
-                    })
-                } else {
-                    d3.selectAll("path.point").style("fill-opacity", 1)
-                }
-
+                /* прозорість непотрібним точкам */                
+                d3.select(this).classed("active", true);
+                d3.selectAll("path.point")
+                    .style("fill-opacity", function (d) { return d.entity_type === 'людина' ? 1 : 0.2 })
+                    .style('pointer-events', function (d) { return d.entity_type === 'людина' ? "all" : "none" });
+               
                 /* перемальовуємо бар-чарт */
                 let input_data = df.filter(function(d){ return d.entity_type === 'людина' });
                 let keyVar =  screen === "first" ? "domain": "country"
                 drawBars(input_data, keyVar)
             });
 
-            d3.select("#is_organization").on("click", function () {
-                /* неактивні інші кнопки */
-                is_watcher = is_ru = is_people = false;                
-                is_organization = !is_organization;
-                d3.selectAll('.filter-button').classed("active", false)
-                d3.select(this).classed("active", true);
-                   
-                /* прозорість непотрібним точкам */
-                if (is_organization) {
-                    d3.selectAll("path.point").style("fill-opacity", function (d) {
-                        return d.entity_type === 'організація' ? 1 : 0.2
-                    })
-                } else {
-                    d3.selectAll("path.point").style("fill-opacity", 1)
-                }
 
+            d3.select("#is_organization").on("click", function () {
+                /* неактивні інші кнопки */                
+                d3.selectAll('.filter-button').classed("active", false);               
+                  
+                /* прозорість непотрібним точкам */                
+                d3.select(this).classed("active", true);
+                d3.selectAll("path.point")
+                    .style("fill-opacity", function (d) { return d.entity_type === 'організація' ? 1 : 0.2  })
+                    .style('pointer-events', function (d) { return d.entity_type === 'організація' ? "all" : "none" });
+                
                 /* перемальовуємо бар-чарт */
                 let input_data = df.filter(function(d){ return d.entity_type === 'організація' });
                 let keyVar =  screen === "first" ? "domain": "country"
@@ -452,21 +434,15 @@
 
 
             d3.select("#is_ru").on("click", function () {
-                /* неактивні інші кнопки */
-                is_watcher = is_organization = is_people = false;                
-                is_ru = !is_ru;
-                d3.selectAll('.filter-button').classed("active", false)
+                /* неактивні інші кнопки */              
+                d3.selectAll('.filter-button').classed("active", false);                
+
+                /* прозорість непотрібним точкам */                
                 d3.select(this).classed("active", true)
-
-                /* прозорість непотрібним точкам */
-                if (is_ru) {
-                    d3.selectAll("path.point").style("fill-opacity", function (d) {
-                        return d.collaboration_type === 'росіяни' ? 1 : 0.2
-                    })
-                } else {
-                    d3.selectAll("path.point").style("fill-opacity", 1)
-                }
-
+                d3.selectAll("path.point")
+                    .style("fill-opacity", function (d) { return d.collaboration_type === 'росіяни' ? 1 : 0.2 })
+                    .style('pointer-events', function (d) { return d.collaboration_type === 'росіяни' ? "all" : "none" });
+               
                  /* перемальовуємо бар-чарт */
                  let input_data = df.filter(function(d){ return d.collaboration_type === 'росіяни' });
                  let keyVar =  screen === "first" ? "domain": "country"
@@ -474,22 +450,15 @@
             });
 
             d3.select("#is_watcher").on("click", function () {
-                 /* неактивні інші кнопки */
-                is_organization = is_ru = is_people = false;                
-                is_watcher = !is_watcher;
-                d3.selectAll('.filter-button').classed("active", false)
-                d3.select(this).classed("active", true)
-                //d3.select("#is_ru").property("checked", false);
-
-                /* прозорість непотрібним точкам */
-                if (is_watcher) {
-                    d3.selectAll("path.point").style("fill-opacity", function (d) {
-                        return d.observer_border_violation != ''  ? 1 : 0.2
-                    })
-                } else {
-                    d3.selectAll("path.point").style("fill-opacity", 1)
-                }
-
+                 /* неактивні інші кнопки */              
+                d3.selectAll('.filter-button').classed("active", false)               
+                
+                /* прозорість непотрібним точкам */                
+                d3.select(this).classed("active", true);
+                d3.selectAll("path.point")
+                    .style("fill-opacity", function (d) {  return d.observer_border_violation != ''  ? 1 : 0.2   })
+                    .style('pointer-events', function (d) { return d.observer_border_violation != '' ? "all" : "none" });
+                
                  /* перемальовуємо бар-чарт */
                  let input_data = df.filter(function(d){ return d.observer_border_violation != '' });
                  let keyVar =  screen === "first" ? "domain": "country"
@@ -624,8 +593,8 @@
                             "key": d.data.data.id,
                             "depth": d.data.depth,
                             "height": d.data.height,
-                            "x": d.y + packLayoutLeftMargin,
-                            "y": d.x - vWidth/3.5,
+                            "x": d.y + packLayoutLeftMargin -100,
+                            "y": d.x - vWidth/3,
                             "r": d.r
 
                         }
@@ -781,35 +750,33 @@
                         .attr("transform", function (d) { return `translate(${d.x}, ${d.y})scale(0.35)` });
 
                     d3.select("#filter").on("keyup", function () {
-                        var value = d3.select(this).property("value");
+                        var value = d3.select(this).property("value");                       
 
-                        console.log(value);
-
-                    if (value) {
-                        var i = 0;
-                        var re = new RegExp(value, "i");
+                        if (value) {
+                            var i = 0;
+                            var re = new RegExp(value, "i");
 
 
-                    console.log(re);
+                        console.log(re);
 
-                    points.each(function (d) {                   
-                        if (d.name_ukr.match(re)) {                             
-                            d3.select(this).style("opacity", 1).style('pointer-events', "all");
+                        points.each(function (d) {                   
+                            if (d.name_ukr.match(re)) {                             
+                                d3.select(this).style("opacity", 1).style('pointer-events', "all");
 
 
+                            } else {
+                                d3.select(this).style("opacity", 0.2).style('pointer-events', "none");
+                            }
+                            i++;
+                        });
                         } else {
-                            d3.select(this).style("opacity", 0.2).style('pointer-events', "none");
-                        }
-                        i++;
-                    });
-                    } else {
 
-                        d3.selectAll("path.point").style("opacity", 1).style('pointer-events', "all");
-
-                    }
-                }); 
+                            d3.selectAll("path.point").style("opacity", 1).style('pointer-events', "all");
 
                         }
+                    }); 
+
+                }
             }
 
             /* ---------------------------
