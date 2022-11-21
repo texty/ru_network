@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script src="lib/d3v5.min.js"></script>
+</head>
+<body>
+
+    <div id="cover">
+        <img src="cover/fon.png" style="position: absolute; top:0; left:0; width: 100%; z-index: -1"/> 
+    </div>
+
+    <script>
+
+
+    d3.xml("cover/map_reshaped.svg").then(function (data) {
+
+            d3.select("#cover")
+            .node()
+            .append(data.documentElement);  
+
+            var svg = d3.select('svg');
+            var circles = d3.select("svg").selectAll("circle");
+
+            circles._groups[0].forEach(function(el,i){  
+                let x = d3.select(el).attr("cx"); 
+                let y = d3.select(el).attr("cy")   
+                d3.select(el)
+                .attr("cx", 3000)
+                .attr('cy', 200)
+                .transition()
+                .duration(500)
+                .delay(function(d,i) { return Math.random() * 7500 })
+                .attr('cx', x)
+                .attr('cy', y)
+            })
+
+    })
+
+
+
+        // d3.xml("cover/map-2.svg").then(function (data) {
+
+        //  d3.select("#cover")
+        //     .node()
+        //     .append(data.documentElement);
+
+        //  var svg = d3.select('svg');
+        //  var paths = d3.select("svg").selectAll("path");
+
+        //  var points = [];
+
+        //  paths._groups[0].forEach(function(el,i){
+        //     const pathBBox = d3.select(el).node().getBBox();
+        //     let fill = d3.select(el).style('fill');
+
+        //     let ob = {'el': i, "x":pathBBox.x, "y":  pathBBox.y, 'fill': fill}
+
+        //     if(fill != "rgb(225, 89, 137)" && fill != "rgb(243, 166, 178)" && fill != 'rgb(255, 255, 255)'){
+        //         points.push(ob)
+        //     }
+
+            
+        //     d3.select(el).remove()
+
+
+
+        //  }) ; 
+
+
+        //     d3.select('svg').selectAll("circle")
+        //         .data(points)
+        //         .enter()
+        //         .append("circle")
+        //         .attr("cx", 3000)
+        //         .attr('cy', 200)
+        //         .attr('fill', function(d){ return d.fill})
+        //         .attr('r', 2)
+        //         .transition()
+        //         .duration(500)
+        //         .delay(function(d,i) { return Math.random() * 7500 })
+        //         .attr('cx', function(d){ return d.x})
+        //         .attr('cy', function(d){ return d.y})
+            
+        //  })
+
+        
+    </script>
+    
+</body>
+</html>
