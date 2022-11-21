@@ -242,7 +242,7 @@ d3.csv("data/churches.csv").then(function(df){
              });  
 
              //map.showCollisionBoxes = true;
-            
+             map.addControl(new mapboxgl.NavigationControl());
             map.dragRotate.disable();
             map.touchZoomRotate.disableRotation();
             
